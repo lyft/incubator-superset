@@ -586,7 +586,6 @@ appbuilder.add_view(
 def health():
     return "OK"
 
-
 @app.route('/healthcheck')
 def health():
     return "OK"
