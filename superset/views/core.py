@@ -587,6 +587,10 @@ def health():
     return "OK"
 
 
+@app.route('/healthcheck')
+def health():
+    return "OK"
+
 @app.route('/ping')
 def ping():
     return "OK"
