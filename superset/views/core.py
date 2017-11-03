@@ -587,7 +587,7 @@ def health():
     return "OK"
 
 @app.route('/healthcheck')
-def health():
+def healthcheck():
     return "OK"
 
 @app.route('/ping')
@@ -976,7 +976,7 @@ class Superset(BaseSupersetView):
             mimetype="application/json")
 
     @log_this
-    @has_access_api
+#   @has_access_api # remove until we figure out auth
     @expose("/explore_json/<datasource_type>/<datasource_id>/")
     def explore_json(self, datasource_type, datasource_id):
         try:
@@ -1743,6 +1743,7 @@ class Superset(BaseSupersetView):
     @expose("/dashboard/<dashboard_id>/")
     def dashboard(self, dashboard_id):
         """Server side rendering for a dashboard"""
+        logging.info("in dashboard")
         session = db.session()
         qry = session.query(models.Dashboard)
         if dashboard_id.isdigit():
@@ -1801,7 +1802,7 @@ class Superset(BaseSupersetView):
         )
 
     @expose("/dashboard_json/<dashboard_id>/")
-    def dashboard(self, dashboard_id):
+    def dashboard_json(self, dashboard_id):
         """Server side rendering for a dashboard"""
         session = db.session()
         qry = session.query(models.Dashboard)
