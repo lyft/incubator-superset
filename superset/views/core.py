@@ -340,10 +340,10 @@ appbuilder.add_view(
 class SliceModelView(SupersetModelView, DeleteMixin):  # noqa
     datamodel = SQLAInterface(models.Slice)
 
-    list_title = _('List Slices')
-    show_title = _('Show Slice')
-    add_title = _('Add Slice')
-    edit_title = _('Edit Slice')
+    list_title = _('List Charts')
+    show_title = _('Show Chart')
+    add_title = _('Add Chart')
+    edit_title = _('Edit Chart')
 
     can_add = False
     label_columns = {
@@ -384,7 +384,7 @@ class SliceModelView(SupersetModelView, DeleteMixin):  # noqa
         'modified': _("Last Modified"),
         'owners': _("Owners"),
         'params': _("Parameters"),
-        'slice_link': _("Slice"),
+        'slice_link': _("Chart"),
         'slice_name': _("Name"),
         'table': _("Table"),
         'viz_type': _("Visualization Type"),
@@ -417,8 +417,8 @@ class SliceModelView(SupersetModelView, DeleteMixin):  # noqa
 
 appbuilder.add_view(
     SliceModelView,
-    "Slices",
-    label=__("Slices"),
+    "Charts",
+    label=__("Charts"),
     icon="fa-bar-chart",
     category="",
     category_icon='',)
@@ -430,7 +430,7 @@ class SliceAsync(SliceModelView):  # noqa
         'creator', 'modified', 'icons']
     label_columns = {
         'icons': ' ',
-        'slice_link': _('Slice'),
+        'slice_link': _('Chart'),
     }
 
 appbuilder.add_view_no_menu(SliceAsync)
@@ -488,7 +488,7 @@ class DashboardModelView(SupersetModelView, DeleteMixin):  # noqa
         'dashboard_link': _("Dashboard"),
         'dashboard_title': _("Title"),
         'slug': _("Slug"),
-        'slices': _("Slices"),
+        'slices': _("Charts"),
         'owners': _("Owners"),
         'creator': _("Creator"),
         'modified': _("Modified"),
