@@ -1883,6 +1883,31 @@ class DeckHex(BaseDeckGLViz):
     viz_type = 'deck_hex'
     verbose_name = _('Deck.gl - 3D HEX')
 
+class DeckGeoJson(BaseDeckGLViz):
+
+    """deck.gl's GeoJSONLayer"""
+
+    viz_type = 'deck_geojson'
+    verbose_name = _('Deck.gl - GeoJSON')
+
+    def query_obj(self):
+        d = super(DeckGeoJson, self).query_obj()
+        d['columns'] = [self.form_data.get('geojson')]
+        d['metrics'] = []
+        d['groupby'] = []
+
+        from pprint import pprint
+        pprint(d)
+        return d
+
+    def get_data(self, df):
+        print(df)
+
+        # Combine all geojson into one FeatureCollections
+        print(df['geojson'])
+
+
+        return {'foo':'bar', 'mapboxApiKey': config.get('MAPBOX_API_KEY')}
 
 class EventFlowViz(BaseViz):
 
