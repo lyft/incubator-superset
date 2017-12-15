@@ -1904,7 +1904,7 @@ class DeckGeoJson(BaseDeckGLViz):
         print(df)
 
         # Combine all geojson into one FeatureCollections
-        print(df['geojson'])
+        # print(df['geojson'])
 
 
         return {'foo':'bar', 'mapboxApiKey': config.get('MAPBOX_API_KEY')}
