@@ -1896,18 +1896,22 @@ class DeckGeoJson(BaseDeckGLViz):
         d['metrics'] = []
         d['groupby'] = []
 
-        from pprint import pprint
-        pprint(d)
         return d
 
     def get_data(self, df):
-        print(df)
+        fd = self.form_data
 
-        # Combine all geojson into one FeatureCollections
-        # print(df['geojson'])
+        # Need to merge all shapes into 1 big feature collection
+        geojson = {
+            'type': 'FeatureCollection',
+            'features': [json.loads(item) for item in df.get(fd.get('line_column'))]
+        }
 
+        return {
+            'geojson': geojson,
+            'mapboxApiKey': config.get('MAPBOX_API_KEY')
+        }
 
-        return {'foo':'bar', 'mapboxApiKey': config.get('MAPBOX_API_KEY')}
 
 class EventFlowViz(BaseViz):
 
