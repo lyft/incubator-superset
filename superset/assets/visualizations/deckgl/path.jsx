@@ -8,13 +8,11 @@ function deckPath(slice, payload, setControlValue) {
   const fd = slice.formData;
   const c = fd.color_picker;
   const fixedColor = [c.r, c.g, c.b, 255 * c.a];
-  const data = payload.data.paths.map((path) => {
-    return {
-      path,
-      width: fd.line_width,
-      color: fixedColor,
-    };
-  });;
+  const data = payload.data.paths.map(path => ({
+    path,
+    width: fd.line_width,
+    color: fixedColor,
+  }));
 
   const layer = new PathLayer({
     id: `path-layer-${slice.containerId}`,
