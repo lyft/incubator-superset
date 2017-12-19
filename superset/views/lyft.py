@@ -13,15 +13,14 @@ from flask import (
 )
 
 from flask_babel import gettext as __
-
 from superset import (
     app, appbuilder, db, utils,
 )
 
 import superset.models.core as models
+from superset.utils import QueryStatus
 from superset.views.core import Superset
 
-from superset.utils import QueryStatus
 from .base import (
     CsvResponse, generate_download_headers, json_error_response,
 )

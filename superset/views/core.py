@@ -1783,7 +1783,6 @@ class Superset(BaseSupersetView):
     @expose('/dashboard/<dashboard_id>/')
     def dashboard(self, dashboard_id):
         """Server side rendering for a dashboard"""
-        logging.info("in dashboard")
         session = db.session()
         qry = session.query(models.Dashboard)
         if dashboard_id.isdigit():
@@ -1858,16 +1857,6 @@ class Superset(BaseSupersetView):
             if datasource:
                 datasources.add(datasource)
 
-        # Commenting until we figure out Authentication from a service
-        # for datasource in datasources:
-        #     if datasource and not self.datasource_access(datasource):
-        #         flash(
-        #             __(get_datasource_access_error_msg(datasource.name)),
-        #             "danger")
-        #         return redirect(
-        #             'superset/request_access/?'
-        #             'dashboard_id={dash.id}&'.format(**locals()))
-
         # Hack to log the dashboard_id properly, even when getting a slug
         @log_this
         def dashboard(**kwargs):  # noqa
@@ -1878,7 +1867,7 @@ class Superset(BaseSupersetView):
         dash_save_perm = \
             dash_edit_perm and self.can_access('can_save_dash', 'Superset')
 
-        standalone_mode = request.args.get("standalone") == "true"
+        standalone_mode = request.args.get('standalone') == 'true'
 
         dashboard_data = dash.data
         dashboard_data.update({
