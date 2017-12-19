@@ -40,7 +40,6 @@ from superset import (
 from superset.views.core import Superset
 from superset.connectors.connector_registry import ConnectorRegistry
 from superset.connectors.sqla.models import SqlaTable
-from superset.forms import CsvToDatabaseForm
 from superset.legacy import cast_form_data
 import superset.models.core as models
 from superset.models.sql_lab import Query
@@ -48,8 +47,7 @@ from superset.sql_parse import SupersetQuery
 from superset.utils import has_access, merge_extra_filters, QueryStatus
 from .base import (
     api, BaseSupersetView, CsvResponse, DeleteMixin,
-    generate_download_headers, get_error_msg, get_user_roles,
-    json_error_response, SupersetFilter, SupersetModelView, YamlExportMixin,
+    get_error_msg, get_user_roles, json_error_response, SupersetFilter, SupersetModelView
 )
 
 config = app.config
@@ -81,16 +79,12 @@ def get_datasource_access_error_msg(datasource_name):
 def json_success(json_msg, status=200):
     return Response(json_msg, status=status, mimetype='application/json')
 
-@app.route('/lyft/healthcheck')
-def lyft_healthcheck():
-    return 'OK'
 
 class Lyft(Superset):
-    
+
     @log_this
-    @expose("/explore_json/<datasource_type>/<datasource_id>/")
-    def lyft_explore_json(self):
-        return self.json_success({'foo':'bar'}, status=200)
+    @expose('/explore_json/<datasource_type>/<datasource_id>/')
+    def lyft_explore_json(self, datasource_type, datasource_id):
         try:
             viz_obj = self.get_viz(
                 datasource_type=datasource_type,
@@ -102,13 +96,6 @@ class Lyft(Superset):
             return json_error_response(
                 utils.error_msg_from_exception(e),
                 stacktrace=traceback.format_exc())
-
-        if request.args.get('csv') == 'true':
-            return CsvResponse(
-                viz_obj.get_csv(),
-                status=200,
-                headers=generate_download_headers('csv'),
-                mimetype='application/csv')
 
         if request.args.get('query') == 'true':
             return self.get_query_string_response(viz_obj)
@@ -128,7 +115,7 @@ class Lyft(Superset):
         return json_success(viz_obj.json_dumps(payload), status=status)
 
     @log_this
-    @expose("/dashboard_json/<dashboard_id>/")
+    @expose('/dashboard_json/<dashboard_id>/')
     def dashboard_json(self, dashboard_id):
         """Server side rendering for a dashboard"""
         session = db.session()
@@ -151,17 +138,13 @@ class Lyft(Superset):
             pass
         dashboard(dashboard_id=dash.id)
 
-        dash_edit_perm = check_ownership(dash, raise_if_false=False)
-        dash_save_perm = \
-            dash_edit_perm and self.can_access('can_save_dash', 'Superset')
-
-        standalone_mode = request.args.get("standalone") == "true"
+        standalone_mode = request.args.get('standalone') == 'true'
 
         dashboard_data = dash.data
         dashboard_data.update({
             'standalone_mode': standalone_mode,
-            'dash_save_perm': dash_save_perm,
-            'dash_edit_perm': dash_edit_perm,
+            'dash_save_perm': False,
+            'dash_edit_perm': False,
         })
 
         bootstrap_data = {
