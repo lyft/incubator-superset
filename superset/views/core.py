@@ -931,7 +931,7 @@ class Superset(BaseSupersetView):
         if request.args.get('form_data'):
             form_data = request.args.get('form_data')
         elif request.form.get('form_data'):
-            # Supporting POST as well as get
+            # Supporting POST as wel©l as get
             form_data = request.form.get('form_data')
         else:
             form_data = '{}'
@@ -1011,7 +1011,8 @@ class Superset(BaseSupersetView):
                 utils.error_msg_from_exception(e),
                 stacktrace=traceback.format_exc())
 
-        if not self.datasource_access(viz_obj.datasource) and request.args.get("restful") != "true":
+        if not self.datasource_access(viz_obj.datasource) and \
+                request.args.get("restful") != "true":
             return json_error_response(DATASOURCE_ACCESS_ERR, status=404)
 
         if request.args.get('csv') == 'true':

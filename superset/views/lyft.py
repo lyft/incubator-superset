@@ -3,53 +3,25 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from collections import defaultdict
-from datetime import datetime, timedelta
 import json
 import logging
-import os
-import pickle
-import re
-import time
 import traceback
-from urllib import parse
 
+from flask_appbuilder import expose
 from flask import (
-    flash, g, Markup, redirect, render_template, request, Response, url_for,
+    g, request, Response,
 )
-from flask_appbuilder import expose, SimpleFormView
-from flask_appbuilder.actions import action
-from flask_appbuilder.models.sqla.interface import SQLAInterface
-from flask_appbuilder.security.decorators import has_access_api
-from flask_appbuilder.security.sqla import models as ab_models
-from flask_babel import gettext as __
-from flask_babel import lazy_gettext as _
-import pandas as pd
-import sqlalchemy as sqla
-from sqlalchemy import create_engine
-from sqlalchemy.engine.url import make_url
-from unidecode import unidecode
-from werkzeug.routing import BaseConverter
-from werkzeug.utils import secure_filename
 
+from flask_babel import gettext as __
 from superset import (
-    app, appbuilder, cache, db, results_backend, security, sm, sql_lab, utils,
-    viz,
+    app, appbuilder, db, utils
 )
 
 from superset.views.core import Superset
-from superset.connectors.connector_registry import ConnectorRegistry
-from superset.connectors.sqla.models import SqlaTable
-from superset.forms import CsvToDatabaseForm
-from superset.legacy import cast_form_data
 import superset.models.core as models
-from superset.models.sql_lab import Query
-from superset.sql_parse import SupersetQuery
-from superset.utils import has_access, merge_extra_filters, QueryStatus
+from superset.utils import QueryStatus
 from .base import (
-    api, BaseSupersetView, CsvResponse, DeleteMixin,
-    generate_download_headers, get_error_msg, get_user_roles,
-    json_error_response, SupersetFilter, SupersetModelView, YamlExportMixin,
+    CsvResponse, generate_download_headers, json_error_response
 )
 
 config = app.config
@@ -81,16 +53,17 @@ def get_datasource_access_error_msg(datasource_name):
 def json_success(json_msg, status=200):
     return Response(json_msg, status=status, mimetype='application/json')
 
+
 @app.route('/lyft/healthcheck')
 def lyft_healthcheck():
     return 'OK'
 
+
 class Lyft(Superset):
-    
+
     @log_this
     @expose("/explore_json/<datasource_type>/<datasource_id>/")
-    def lyft_explore_json(self):
-        return self.json_success({'foo':'bar'}, status=200)
+    def lyft_explore_json(self, datasource_type, datasource_id):
         try:
             viz_obj = self.get_viz(
                 datasource_type=datasource_type,
@@ -125,7 +98,7 @@ class Lyft(Superset):
         if payload.get('status') == QueryStatus.FAILED:
             status = 400
 
-        return json_success(viz_obj.json_dumps(payload), status=status)
+        return self.json_success(viz_obj.json_dumps(payload), status=status)
 
     @log_this
     @expose("/dashboard_json/<dashboard_id>/")
@@ -151,17 +124,13 @@ class Lyft(Superset):
             pass
         dashboard(dashboard_id=dash.id)
 
-        dash_edit_perm = check_ownership(dash, raise_if_false=False)
-        dash_save_perm = \
-            dash_edit_perm and self.can_access('can_save_dash', 'Superset')
-
         standalone_mode = request.args.get("standalone") == "true"
 
         dashboard_data = dash.data
         dashboard_data.update({
             'standalone_mode': standalone_mode,
-            'dash_save_perm': dash_save_perm,
-            'dash_edit_perm': dash_edit_perm,
+            'dash_save_perm': False,
+            'dash_edit_perm': False,
         })
 
         bootstrap_data = {
@@ -171,6 +140,7 @@ class Lyft(Superset):
             'common': self.common_bootsrap_payload(),
         }
 
-        return json_success(json.dumps(bootstrap_data))
+        return self.json_success(json.dumps(bootstrap_data), status=200)
+
 
 appbuilder.add_view_no_menu(Lyft)
