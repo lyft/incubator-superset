@@ -13,7 +13,11 @@ function deckHex(slice, payload, setControlValue) {
   }));
 
   const layer = new HexagonLayer({
+<<<<<<< HEAD
     id: `hex-layer-${slice.containerId}`,
+=======
+    id: 'screengrid-layer',
+>>>>>>> 43c5c840e23e73295c478d79458e349af9b97167
     data,
     pickable: true,
     radius: fd.grid_size,

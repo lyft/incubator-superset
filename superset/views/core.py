@@ -662,11 +662,6 @@ def healthcheck():
     return 'OK'
 
 
-@app.route('/ping')
-def ping():
-    return 'OK'
-
-
 class KV(BaseSupersetView):
 
     """Used for storing and retrieving key value pairs"""
