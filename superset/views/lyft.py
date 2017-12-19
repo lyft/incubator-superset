@@ -13,15 +13,17 @@ from flask import (
 )
 
 from flask_babel import gettext as __
+
 from superset import (
-    app, appbuilder, db, utils
+    app, appbuilder, db, utils,
 )
 
-from superset.views.core import Superset
 import superset.models.core as models
+from superset.views.core import Superset
+
 from superset.utils import QueryStatus
 from .base import (
-    CsvResponse, generate_download_headers, json_error_response
+    CsvResponse, generate_download_headers, json_error_response,
 )
 
 config = app.config
@@ -54,15 +56,10 @@ def json_success(json_msg, status=200):
     return Response(json_msg, status=status, mimetype='application/json')
 
 
-@app.route('/lyft/healthcheck')
-def lyft_healthcheck():
-    return 'OK'
-
-
 class Lyft(Superset):
 
     @log_this
-    @expose("/explore_json/<datasource_type>/<datasource_id>/")
+    @expose('/explore_json/<datasource_type>/<datasource_id>/')
     def lyft_explore_json(self, datasource_type, datasource_id):
         try:
             viz_obj = self.get_viz(
@@ -101,7 +98,7 @@ class Lyft(Superset):
         return json_success(viz_obj.json_dumps(payload), status=status)
 
     @log_this
-    @expose("/dashboard_json/<dashboard_id>/")
+    @expose('/dashboard_json/<dashboard_id>/')
     def dashboard_json(self, dashboard_id):
         """Server side rendering for a dashboard"""
         session = db.session()
@@ -124,7 +121,7 @@ class Lyft(Superset):
             pass
         dashboard(dashboard_id=dash.id)
 
-        standalone_mode = request.args.get("standalone") == "true"
+        standalone_mode = request.args.get('standalone') == 'true'
 
         dashboard_data = dash.data
         dashboard_data.update({
