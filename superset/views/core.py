@@ -998,7 +998,7 @@ class Superset(BaseSupersetView):
             mimetype='application/json')
 
     @log_this
-    @expose("/explore_json/<datasource_type>/<datasource_id>/")
+    @expose('/explore_json/<datasource_type>/<datasource_id>/')
     def explore_json(self, datasource_type, datasource_id):
         try:
             viz_obj = self.get_viz(
@@ -1012,7 +1012,7 @@ class Superset(BaseSupersetView):
                 stacktrace=traceback.format_exc())
 
         if not self.datasource_access(viz_obj.datasource) and \
-                request.args.get("restful") != "true":
+                request.args.get('restful') != 'true':
             return json_error_response(DATASOURCE_ACCESS_ERR, status=404)
 
         if request.args.get('csv') == 'true':

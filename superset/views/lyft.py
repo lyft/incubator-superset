@@ -98,7 +98,7 @@ class Lyft(Superset):
         if payload.get('status') == QueryStatus.FAILED:
             status = 400
 
-        return self.json_success(viz_obj.json_dumps(payload), status=status)
+        return json_success(viz_obj.json_dumps(payload), status=status)
 
     @log_this
     @expose("/dashboard_json/<dashboard_id>/")
@@ -140,7 +140,7 @@ class Lyft(Superset):
             'common': self.common_bootsrap_payload(),
         }
 
-        return self.json_success(json.dumps(bootstrap_data), status=200)
+        return json_success(json.dumps(bootstrap_data), status=200)
 
 
 appbuilder.add_view_no_menu(Lyft)
