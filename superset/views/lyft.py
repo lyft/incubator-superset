@@ -90,7 +90,7 @@ class Lyft(Superset):
 
     @log_this
     @expose('/lyft_dashboard_json/<dashboard_id>/')
-    def dashboard_json(self, dashboard_id):
+    def lyft_dashboard_json(self, dashboard_id):
         """Server side rendering for a dashboard"""
         session = db.session()
         qry = session.query(models.Dashboard)
