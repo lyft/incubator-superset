@@ -577,6 +577,7 @@ export const visTypes = {
         controlSetRows: [
           ['js_columns'],
           ['js_data_mutator'],
+<<<<<<< HEAD
           ['js_tooltip'],
           ['js_onclick_href'],
         ],
@@ -617,6 +618,8 @@ export const visTypes = {
         controlSetRows: [
           ['js_columns'],
           ['js_datapoint_mutator'],
+=======
+>>>>>>> 073d56cb33d6f541c4440c1d629dfe44bc57c415
           ['js_tooltip'],
           ['js_onclick_href'],
         ],
