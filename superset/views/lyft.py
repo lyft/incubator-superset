@@ -57,6 +57,7 @@ def json_success(json_msg, status=200):
 class Lyft(Superset):
 
     @log_this
+    @has_access
     @expose('/lyft_explore_json/<datasource_type>/<datasource_id>/')
     def lyft_explore_json(self, datasource_type, datasource_id):
         try:
@@ -76,6 +77,7 @@ class Lyft(Superset):
                                   force=force)
 
     @log_this
+    @has_access
     @expose('/lyft_dashboard_json/<dashboard_id>/')
     def lyft_dashboard_json(self, dashboard_id):
         """Server side rendering for a dashboard"""
