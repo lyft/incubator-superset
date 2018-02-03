@@ -11,6 +11,7 @@ from flask import (
      g, request, Response,
 )
 from flask_appbuilder import expose
+from flask_appbuilder.security.decorators import has_access_api
 from flask_babel import gettext as __
 
 from superset import (
@@ -40,84 +41,11 @@ USER_MISSING_ERR = __('The user seems to have been deleted')
 DATASOURCE_ACCESS_ERR = __("You don't have access to this datasource")
 
 
-def get_database_access_error_msg(database_name):
-    return __('This view requires the database %(name)s or '
-              '`all_datasource_access` permission', name=database_name)
-
-
-def get_datasource_access_error_msg(datasource_name):
-    return __('This endpoint requires the datasource %(name)s, database or '
-              '`all_datasource_access` permission', name=datasource_name)
-
-
 def json_success(json_msg, status=200):
     return Response(json_msg, status=status, mimetype='application/json')
 
 
 class Lyft(Superset):
-
-    @log_this
-    @has_access
-    @expose('/lyft_explore_json/<datasource_type>/<datasource_id>/')
-    def lyft_explore_json(self, datasource_type, datasource_id):
-        try:
-            csv = request.args.get('csv') == 'true'
-            query = request.args.get('query') == 'true'
-            force = request.args.get('force') == 'true'
-            form_data = self.get_form_data()
-        except Exception as e:
-                return json_error_response(
-                    utils.error_msg_from_exception(e),
-                    stacktrace=traceback.format_exc())
-        return self.generate_json(datasource_type=datasource_type,
-                                  datasource_id=datasource_id,
-                                  form_data=form_data,
-                                  csv=csv,
-                                  query=query,
-                                  force=force)
-
-    @log_this
-    @has_access
-    @expose('/lyft_dashboard_json/<dashboard_id>/')
-    def lyft_dashboard_json(self, dashboard_id):
-        """Server side rendering for a dashboard"""
-        session = db.session()
-        qry = session.query(models.Dashboard)
-        if dashboard_id.isdigit():
-            qry = qry.filter_by(id=int(dashboard_id))
-        else:
-            qry = qry.filter_by(slug=dashboard_id)
-
-        dash = qry.one()
-        datasources = set()
-        for slc in dash.slices:
-            datasource = slc.datasource
-            if datasource:
-                datasources.add(datasource)
-
-        # Hack to log the dashboard_id properly, even when getting a slug
-        @log_this
-        def dashboard(**kwargs):  # noqa
-            pass
-        dashboard(dashboard_id=dash.id)
-
-        standalone_mode = request.args.get('standalone') == 'true'
-
-        dashboard_data = dash.data
-        dashboard_data.update({
-            'standalone_mode': standalone_mode,
-            'dash_save_perm': False,
-            'dash_edit_perm': False,
-        })
-
-        bootstrap_data = {
-            'user_id': g.user.get_id(),
-            'dashboard_data': dashboard_data,
-            'datasources': {ds.uid: ds.data for ds in datasources},
-            'common': self.common_bootsrap_payload(),
-        }
-
-        return json_success(json.dumps(bootstrap_data))
 
     def generate_json(self, datasource_type, datasource_id, form_data,
                       csv=False, query=False, force=False):
