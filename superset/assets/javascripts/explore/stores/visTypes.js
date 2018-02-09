@@ -51,6 +51,13 @@ export const sections = {
       ['annotation_layers'],
     ],
   },
+  geo_annotations: {
+    label: t('Geo Annotations and Layers'),
+    expanded: true,
+    controlSetRows: [
+      ['geo_annotation_layers'],
+    ],
+  },
   NVD3TimeSeries: [
     {
       label: t('Query'),
@@ -662,6 +669,7 @@ export const visTypes = {
           ['js_onclick_href'],
         ],
       },
+      sections.geo_annotations,
     ],
     controlOverrides: {
       dimension: {

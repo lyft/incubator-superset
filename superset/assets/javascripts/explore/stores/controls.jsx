@@ -1664,6 +1664,14 @@ export const controls = {
     renderTrigger: true,
   },
 
+  geo_annotation_layers: {
+    type: 'GeoAnnotationLayerControl',
+    label: '',
+    default: [],
+    description: 'Geo Annotation Layers',
+    renderTrigger: true,
+  },
+
   having_filters: {
     type: 'FilterControl',
     label: '',

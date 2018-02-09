@@ -8,6 +8,7 @@ import DatasourceControl from './DatasourceControl';
 import DateFilterControl from './DateFilterControl';
 import FilterControl from './FilterControl';
 import FixedOrMetricControl from './FixedOrMetricControl';
+import GeoAnnotationLayerControl from './GeoAnnotationLayerControl';
 import HiddenControl from './HiddenControl';
 import SelectAsyncControl from './SelectAsyncControl';
 import SelectControl from './SelectControl';
@@ -29,6 +30,7 @@ const controlMap = {
   DateFilterControl,
   FilterControl,
   FixedOrMetricControl,
+  GeoAnnotationLayerControl,
   HiddenControl,
   SelectAsyncControl,
   SelectControl,
