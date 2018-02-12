@@ -1,4 +1,4 @@
-import { getExploreUrl, getAnnotationJsonUrl } from '../explore/exploreUtils';
+import { getExploreUrl, getAnnotationJsonUrl, getGeoAnnotationJsonUrl } from '../explore/exploreUtils';
 import { requiresQuery, ANNOTATION_SOURCE_TYPES } from '../modules/AnnotationTypes';
 import { Logger, LOG_ACTIONS_LOAD_EVENT } from '../logger';
 
@@ -59,21 +59,6 @@ export function annotationQueryFailed(annotation, queryResponse, key) {
   return { type: ANNOTATION_QUERY_FAILED, annotation, queryResponse, key };
 }
 
-export const GEO_ANNOTATION_QUERY_SUCCESS = 'GEO_ANNOTATION_QUERY_SUCCESS';
-export function geoAnnotationQuerySuccess(geoAnnotation, queryResponse, key) {
-  return { type: GEO_ANNOTATION_QUERY_SUCCESS, geoAnnotation, queryResponse, key };
-}
-
-export const GEO_ANNOTATION_QUERY_STARTED = 'GEO_ANNOTATION_QUERY_STARTED';
-export function geoAnnotationQueryStarted(geoAnnotation, queryRequest, key) {
-  return { type: GEO_ANNOTATION_QUERY_STARTED, geoAnnotation, queryRequest, key };
-}
-
-export const GEO_ANNOTATION_QUERY_FAILED = 'GEO_ANNOTATION_QUERY_FAILED';
-export function geoAnnotationQueryFailed(geoAnnotation, queryResponse, key) {
-  return { type: GEO_ANNOTATION_QUERY_FAILED, geoAnnotation, queryResponse, key };
-}
-
 export function runAnnotationQuery(annotation, timeout = 60, formData = null, key) {
   return function (dispatch, getState) {
     const sliceKey = key || Object.keys(getState().charts)[0];
@@ -105,6 +90,58 @@ export function runAnnotationQuery(annotation, timeout = 60, formData = null, ke
           dispatch(annotationQuerySuccess(annotation, err, sliceKey));
         } else if (err.statusText !== 'abort') {
           dispatch(annotationQueryFailed(annotation, err.responseJSON, sliceKey));
+        }
+      });
+  };
+}
+
+export const GEO_ANNOTATION_QUERY_SUCCESS = 'GEO_ANNOTATION_QUERY_SUCCESS';
+export function geoAnnotationQuerySuccess(geoAnnotation, queryResponse, key) {
+  return { type: GEO_ANNOTATION_QUERY_SUCCESS, geoAnnotation, queryResponse, key };
+}
+
+export const GEO_ANNOTATION_QUERY_STARTED = 'GEO_ANNOTATION_QUERY_STARTED';
+export function geoAnnotationQueryStarted(geoAnnotation, queryRequest, key) {
+  return { type: GEO_ANNOTATION_QUERY_STARTED, geoAnnotation, queryRequest, key };
+}
+
+export const GEO_ANNOTATION_QUERY_FAILED = 'GEO_ANNOTATION_QUERY_FAILED';
+export function geoAnnotationQueryFailed(geoAnnotation, queryResponse, key) {
+  return { type: GEO_ANNOTATION_QUERY_FAILED, geoAnnotation, queryResponse, key };
+}
+
+export function runGeoAnnotationQuery(geoAnnotation, timeout = 60, formData = null, key) {
+  return function (dispatch, getState) {
+    const sliceKey = key || Object.keys(getState().charts)[0];
+    const fd = formData || getState().charts[sliceKey].latestQueryFormData;
+
+    if (!requiresQuery(geoAnnotation.sourceType)) {
+      return Promise.resolve();
+    }
+
+    const sliceFormData = Object.keys(geoAnnotation.overrides)
+      .reduce((d, k) => ({
+        ...d,
+        [k]: geoAnnotation.overrides[k] || fd[k],
+      }), {});
+    const isNative = geoAnnotation.sourceType === ANNOTATION_SOURCE_TYPES.NATIVE;
+    const url = getGeoAnnotationJsonUrl(geoAnnotation.value, sliceFormData, isNative);
+    const queryRequest = $.ajax({
+      url,
+      dataType: 'json',
+      timeout: timeout * 1000,
+    });
+    dispatch(geoAnnotationQueryStarted(geoAnnotation, queryRequest, sliceKey));
+    return queryRequest
+      .then(queryResponse => dispatch(
+        geoAnnotationQuerySuccess(geoAnnotation, queryResponse, sliceKey)))
+      .catch((err) => {
+        if (err.statusText === 'timeout') {
+          dispatch(geoAnnotationQueryFailed(geoAnnotation, { error: 'Query Timeout' }, sliceKey));
+        } else if ((err.responseJSON.error || '').toLowerCase().startsWith('no data')) {
+          dispatch(geoAnnotationQuerySuccess(geoAnnotation, err, sliceKey));
+        } else if (err.statusText !== 'abort') {
+          dispatch(geoAnnotationQueryFailed(geoAnnotation, err.responseJSON, sliceKey));
         }
       });
   };
@@ -178,10 +215,12 @@ export function runQuery(formData, force = false, timeout = 60, key) {
         }
       });
     const annotationLayers = formData.annotation_layers || [];
+    const geoAnnotationLayers = formData.geoAnnotation_layers || [];
     return Promise.all([
       queryPromise,
       dispatch(triggerQuery(false, key)),
       ...annotationLayers.map(x => dispatch(runAnnotationQuery(x, timeout, formData, key))),
+      ...geoAnnotationLayers.map(x => dispatch(runGeoAnnotationQuery(x, timeout, formData, key))),
     ]);
   };
 }
