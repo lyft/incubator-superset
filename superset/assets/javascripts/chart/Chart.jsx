@@ -15,6 +15,7 @@ import './chart.css';
 
 const propTypes = {
   annotationData: PropTypes.object,
+  geoAnnotationData: PropTypes.object,
   actions: PropTypes.object,
   chartKey: PropTypes.string.isRequired,
   containerId: PropTypes.string.isRequired,
@@ -55,6 +56,7 @@ class Chart extends React.PureComponent {
     this.state = {};
     // these properties are used by visualizations
     this.annotationData = props.annotationData;
+    this.geoAnnotationData = props.geoAnnotationData;
     this.containerId = props.containerId;
     this.selector = `#${this.containerId}`;
     this.formData = props.formData;
@@ -78,6 +80,7 @@ class Chart extends React.PureComponent {
 
   componentWillReceiveProps(nextProps) {
     this.annotationData = nextProps.annotationData;
+    this.geoAnnotationData = nextProps.geoAnnotationData;
     this.containerId = nextProps.containerId;
     this.selector = `#${this.containerId}`;
     this.formData = nextProps.formData;
@@ -90,6 +93,7 @@ class Chart extends React.PureComponent {
         ['success', 'rendered'].indexOf(this.props.chartStatus) > -1 &&
         !this.props.queryResponse.error && (
         prevProps.annotationData !== this.props.annotationData ||
+        prevProps.geoAnnotationData !== this.props.geoAnnotationData ||
         prevProps.queryResponse !== this.props.queryResponse ||
         prevProps.height !== this.props.height ||
         prevProps.width !== this.props.width ||

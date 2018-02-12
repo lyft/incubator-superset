@@ -139,6 +139,53 @@ export default function chartReducer(charts = {}, action) {
         annotationQuery,
       };
     },
+    [actions.GEO_ANNOTATION_QUERY_STARTED](state) {
+      if (state.geoAnnotationQuery &&
+        state.geoAnnotationQuery[action.geoAnnotation.name]) {
+        state.geoAnnotationQuery[action.geoAnnotation.name].abort();
+      }
+      const geoAnnotationQuery = {
+        ...state.geoAnnotationQuery,
+        [action.geoAnnotation.name]: action.queryRequest,
+      };
+      return {
+        ...state,
+        geoAnnotationQuery,
+      };
+    },
+    [actions.GEO_ANNOTATION_QUERY_SUCCESS](state) {
+      const geoAnnotationData = {
+        ...state.geoAnnotationData,
+        [action.geoAnnotation.name]: action.queryResponse.data,
+      };
+      const geoAnnotationError = { ...state.geoAnnotationError };
+      delete geoAnnotationError[action.geoAnnotation.name];
+      const geoAnnotationQuery = { ...state.geoAnnotationQuery };
+      delete geoAnnotationQuery[action.geoAnnotation.name];
+      return {
+        ...state,
+        geoAnnotationData,
+        geoAnnotationError,
+        geoAnnotationQuery,
+      };
+    },
+    [actions.GEO_ANNOTATION_QUERY_FAILED](state) {
+      const geoAnnotationData = { ...state.geoAnnotationData };
+      delete geoAnnotationData[action.geoAnnotation.name];
+      const geoAnnotationError = {
+        ...state.geoAnnotationError,
+        [action.geoAnnotation.name]: action.queryResponse ?
+          action.queryResponse.error : t('Network error.'),
+      };
+      const geoAnnotationQuery = { ...state.geoAnnotationQuery };
+      delete geoAnnotationQuery[action.geoAnnotation.name];
+      return {
+        ...state,
+        geoAnnotationData,
+        geoAnnotationError,
+        geoAnnotationQuery,
+      };
+    },
   };
 
   /* eslint-disable no-param-reassign */

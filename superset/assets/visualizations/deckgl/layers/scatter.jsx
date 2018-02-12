@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import { ScatterplotLayer } from 'deck.gl';
+import { GeoJsonLayer, ScatterplotLayer } from 'deck.gl';
 
 import DeckGLContainer from './../DeckGLContainer';
 
@@ -49,17 +49,43 @@ function getLayer(formData, payload, slice) {
 }
 
 function deckScatter(slice, payload, setControlValue) {
-  const layer = getLayer(slice.formData, payload, slice);
+  const fd = slice.formData;
+  const layers = [];
+  console.log('HAS DATA?', slice.geoAnnotationData);
+  if (slice.geoAnnotationData) {
+    // TODO: move into a function that returns the layer (geoAnnotationLayer?)
+    let data;
+    if (slice.geoAnnotationData.type === 'FeatureCollection') {
+      data = slice.geoAnnotationData.features;
+    } else if (slice.geoAnnotationData.type === 'Feature') {
+      data = [slice.geoAnnotationData];
+    } else {
+      throw new Error('Unrecognized GeoJSON type for annotation');
+    }
+    const geoJsonLayer = new GeoJsonLayer({
+      id: 'test',
+      filled: true,           // fd.filled
+      data,
+      stroked: true,          // fd.stroked
+      extruded: false,        // fd.extruded
+      pointRadiusScale: 100,  // fd.point_radius_scale
+      ...common.commonLayerProps(fd, slice),
+    });
+    layers.push(geoJsonLayer);
+  }
+  layers.push(getLayer(fd, payload, slice));
+
   const viewport = {
     ...slice.formData.viewport,
     width: slice.width(),
     height: slice.height(),
   };
+
   ReactDOM.render(
     <DeckGLContainer
       mapboxApiAccessToken={payload.data.mapboxApiKey}
       viewport={viewport}
-      layers={[layer]}
+      layers={layers}
       mapStyle={slice.formData.mapbox_style}
       setControlValue={setControlValue}
     />,

@@ -59,6 +59,21 @@ export function annotationQueryFailed(annotation, queryResponse, key) {
   return { type: ANNOTATION_QUERY_FAILED, annotation, queryResponse, key };
 }
 
+export const GEO_ANNOTATION_QUERY_SUCCESS = 'GEO_ANNOTATION_QUERY_SUCCESS';
+export function geoAnnotationQuerySuccess(geoAnnotation, queryResponse, key) {
+  return { type: GEO_ANNOTATION_QUERY_SUCCESS, geoAnnotation, queryResponse, key };
+}
+
+export const GEO_ANNOTATION_QUERY_STARTED = 'GEO_ANNOTATION_QUERY_STARTED';
+export function geoAnnotationQueryStarted(geoAnnotation, queryRequest, key) {
+  return { type: GEO_ANNOTATION_QUERY_STARTED, geoAnnotation, queryRequest, key };
+}
+
+export const GEO_ANNOTATION_QUERY_FAILED = 'GEO_ANNOTATION_QUERY_FAILED';
+export function geoAnnotationQueryFailed(geoAnnotation, queryResponse, key) {
+  return { type: GEO_ANNOTATION_QUERY_FAILED, geoAnnotation, queryResponse, key };
+}
+
 export function runAnnotationQuery(annotation, timeout = 60, formData = null, key) {
   return function (dispatch, getState) {
     const sliceKey = key || Object.keys(getState().charts)[0];
