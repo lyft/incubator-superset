@@ -286,9 +286,11 @@ class BaseViz(object):
     def get_payload(self, query_obj=None):
         """Returns a payload of metadata and data"""
         payload = self.get_df_payload(query_obj)
-        df = payload['df']
-        if df is not None:
-            payload['data'] = self.get_data(df)
+
+        df = payload.get('df')
+        if df is not None and len(df.index) == 0:
+            raise Exception('No data')
+        payload['data'] = self.get_data(df)
         del payload['df']
         return payload
 
@@ -1127,10 +1129,11 @@ class NVD3TimeSeriesViz(NVD3Viz):
             query_object['to_dttm'] -= delta
 
             df2 = self.get_df_payload(query_object).get('df')
-            df2[DTTM_ALIAS] += delta
-            df2 = self.process_data(df2)
-            self.extra_chart_data = self.to_series(
-                df2, classed='superset', title_suffix='---')
+            if df2 is not None:
+                df2[DTTM_ALIAS] += delta
+                df2 = self.process_data(df2)
+                self.extra_chart_data = self.to_series(
+                    df2, classed='superset', title_suffix='---')
 
     def get_data(self, df):
         df = self.process_data(df)
@@ -1407,24 +1410,22 @@ class SunburstViz(BaseViz):
         '@<a href="https://bl.ocks.org/kerryrodden/7090426">bl.ocks.org</a>')
 
     def get_data(self, df):
-
-        # if m1 == m2 duplicate the metric column
-        cols = self.form_data.get('groupby')
-        metric = self.form_data.get('metric')
-        secondary_metric = self.form_data.get('secondary_metric')
-        if metric == secondary_metric:
-            ndf = df
-            ndf.columns = [cols + ['m1', 'm2']]
-        else:
-            cols += [
-                self.form_data['metric'], self.form_data['secondary_metric']]
-            ndf = df[cols]
-        return json.loads(ndf.to_json(orient='values'))  # TODO fix this nonsense
+        fd = self.form_data
+        cols = fd.get('groupby')
+        metric = fd.get('metric')
+        secondary_metric = fd.get('secondary_metric')
+        if metric == secondary_metric or secondary_metric is None:
+            df.columns = cols + ['m1']
+            df['m2'] = df['m1']
+        return json.loads(df.to_json(orient='values'))
 
     def query_obj(self):
         qry = super(SunburstViz, self).query_obj()
-        qry['metrics'] = [
-            self.form_data['metric'], self.form_data['secondary_metric']]
+        fd = self.form_data
+        qry['metrics'] = [fd['metric']]
+        secondary_metric = fd.get('secondary_metric')
+        if secondary_metric and secondary_metric != fd['metric']:
+            qry['metrics'].append(secondary_metric)
         return qry
 
 
@@ -1930,7 +1931,6 @@ class BaseDeckGLViz(BaseViz):
         spatial = self.form_data.get(key)
         if spatial is None:
             raise ValueError(_('Bad spatial key'))
-
         if spatial.get('type') == 'latlong':
             df[key] = list(zip(df[spatial.get('lonCol')], df[spatial.get('latCol')]))
         elif spatial.get('type') == 'delimited':
@@ -2003,9 +2003,11 @@ class DeckScatterViz(BaseDeckGLViz):
     viz_type = 'deck_scatter'
     verbose_name = _('Deck.gl - Scatter plot')
     spatial_control_keys = ['spatial']
+    is_timeseries = True
 
     def query_obj(self):
         fd = self.form_data
+        self.is_timeseries = fd.get('time_grain_sqla') or fd.get('granularity')
         self.point_radius_fixed = (
             fd.get('point_radius_fixed') or {'type': 'fix', 'value': 500})
         return super(DeckScatterViz, self).query_obj()
@@ -2022,6 +2024,7 @@ class DeckScatterViz(BaseDeckGLViz):
             'radius': self.fixed_value if self.fixed_value else d.get(self.metric),
             'cat_color': d.get(self.dim) if self.dim else None,
             'position': d.get('spatial'),
+            '__timestamp': d.get('__timestamp'),
         }
 
     def get_data(self, df):

@@ -42,6 +42,7 @@ from superset.utils import QueryStatus, SupersetTemplateException
 config = app.config
 
 tracking_url_trans = conf.get('TRACKING_URL_TRANSFORMER')
+hive_poll_interval = conf.get('HIVE_POLL_INTERVAL')
 
 Grain = namedtuple('Grain', 'name label function')
 
@@ -993,7 +994,7 @@ class HiveEngineSpec(PrestoEngineSpec):
                     last_log_line = len(log_lines)
                 if needs_commit:
                     session.commit()
-            time.sleep(5)
+            time.sleep(hive_poll_interval)
             polled = cursor.poll()
 
     @classmethod
@@ -1199,8 +1200,7 @@ class BQEngineSpec(BaseEngineSpec):
     @classmethod
     def fetch_data(cls, cursor, limit):
         data = super(BQEngineSpec, cls).fetch_data(cursor, limit)
-        from google.cloud.bigquery._helpers import Row  # pylint: disable=import-error
-        if len(data) != 0 and isinstance(data[0], Row):
+        if len(data) != 0 and type(data[0]).__name__ == 'Row':
             data = [r.values() for r in data]
         return data
 

@@ -12,6 +12,7 @@ const D3_FORMAT_DOCS = 'D3 format syntax: https://github.com/d3/d3-format';
 
 // input choices & options
 const D3_FORMAT_OPTIONS = [
+  ['.1s', '.1s | 12k'],
   ['.3s', '.3s | 12.3k'],
   ['.3%', '.3% | 1234543.210%'],
   ['.4r', '.4r | 12350'],
@@ -329,6 +330,14 @@ export const controls = {
     label: t('Include Time'),
     description: t('Whether to include the time granularity as defined in the time section'),
     default: false,
+  },
+
+  autozoom: {
+    type: 'CheckboxControl',
+    label: t('Auto Zoom'),
+    default: true,
+    renderTrigger: true,
+    description: t('When checked, the map will zoom to your data after each query'),
   },
 
   show_perc: {
@@ -862,8 +871,11 @@ export const controls = {
     label: t('Series limit'),
     validators: [v.integer],
     choices: formatSelectOptions(SERIES_LIMITS),
-    default: 50,
-    description: t('Limits the number of time series that get displayed'),
+    description: t(
+      'Limits the number of time series that get displayed. A sub query ' +
+      '(or an extra phase where sub queries are not supported) is applied to limit ' +
+      'the number of time series that get fetched and displayed. This feature is useful ' +
+      'when grouping by high cardinality dimension(s).'),
   },
 
   timeseries_limit_metric: {
