@@ -13,7 +13,6 @@ function mapStateToProps({ charts }, ownProps) {
     chartUpdateEndTime: chart.chartUpdateEndTime,
     chartUpdateStartTime: chart.chartUpdateStartTime,
     latestQueryFormData: chart.latestQueryFormData,
-    sliceState: chart.sliceState,
     lastRendered: chart.lastRendered,
     queryResponse: chart.queryResponse,
     queryRequest: chart.queryRequest,

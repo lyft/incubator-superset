@@ -12,7 +12,6 @@ export const chartPropType = {
   chartUpdateEndTime: PropTypes.number,
   chartUpdateStartTime: PropTypes.number,
   latestQueryFormData: PropTypes.object,
-  sliceState: PropTypes.object,
   queryRequest: PropTypes.object,
   queryResponse: PropTypes.object,
   triggerQuery: PropTypes.bool,
@@ -26,7 +25,6 @@ export const chart = {
   chartUpdateEndTime: null,
   chartUpdateStartTime: now(),
   latestQueryFormData: {},
-  sliceState: {},
   queryRequest: null,
   queryResponse: null,
   triggerQuery: true,
@@ -96,9 +94,6 @@ export default function chartReducer(charts = {}, action) {
     },
     [actions.UPDATE_QUERY_FORM_DATA](state) {
       return { ...state, latestQueryFormData: action.value };
-    },
-    [actions.UPDATE_SLICE_STATE](state) {
-      return { ...state, sliceState: action.value };
     },
     [actions.ANNOTATION_QUERY_STARTED](state) {
       if (state.annotationQuery &&
