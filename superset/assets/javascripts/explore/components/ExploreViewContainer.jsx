@@ -77,8 +77,8 @@ class ExploreViewContainer extends React.Component {
     }
     // if any control value changed and it's an instant control
     if (this.instantControlChanged(this.props.controls, np.controls)) {
-      this.props.actions.updateQueryFormData(
-        getFormDataFromControls(np.controls), this.props.chart.chartKey);
+      // this.props.actions.updateQueryFormData(
+      //  getFormDataFromControls(np.controls), this.props.chart.chartKey);
       this.props.actions.renderTriggered(new Date().getTime(), this.props.chart.chartKey);
     }
   }
@@ -87,9 +87,9 @@ class ExploreViewContainer extends React.Component {
   componentDidUpdate(prevProps, prevState) {
     this.triggerQueryIfNeeded();
 
-    if (this.instantControlChanged(prevProps.controls, this.props.controls)) {
-      this.addHistory({});
-    }
+    // if (this.instantControlChanged(prevProps.controls, this.props.controls)) {
+    this.addHistory({});
+    // }
   }
 
   componentWillUnmount() {
@@ -268,9 +268,9 @@ class ExploreViewContainer extends React.Component {
 ExploreViewContainer.propTypes = propTypes;
 
 function mapStateToProps({ explore, charts, impressionId }) {
-  const form_data = getFormDataFromControls(explore.controls);
   const chartKey = Object.keys(charts)[0];
   const chart = charts[chartKey];
+  const form_data = chart.latestQueryFormData;
   return {
     isDatasourceMetaLoading: explore.isDatasourceMetaLoading,
     datasource: explore.datasource,

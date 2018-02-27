@@ -111,6 +111,11 @@ export function updateQueryFormData(value, key) {
   return { type: UPDATE_QUERY_FORM_DATA, value, key };
 }
 
+export const UPDATE_SLICE_STATE = 'UPDATE_SLICE_STATE';
+export function updateSliceState(value, key) {
+  return { type: UPDATE_SLICE_STATE, value, key };
+}
+
 export const RUN_QUERY = 'RUN_QUERY';
 export function runQuery(formData, force = false, timeout = 60, key) {
   return (dispatch) => {

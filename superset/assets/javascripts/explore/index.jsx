@@ -24,6 +24,7 @@ initJQueryAjax();
 
 const exploreViewContainer = document.getElementById('app');
 const bootstrapData = JSON.parse(exploreViewContainer.getAttribute('data-bootstrap'));
+const latestQueryFormData = bootstrapData.form_data;
 const controls = getControlsState(bootstrapData, bootstrapData.form_data);
 delete bootstrapData.form_data;
 delete bootstrapData.common.locale;
@@ -52,7 +53,9 @@ const initState = {
       chartStatus: 'loading',
       chartUpdateEndTime: null,
       chartUpdateStartTime: now(),
-      latestQueryFormData: getFormDataFromControls(controls),
+      // latestQueryFormData: getFormDataFromControls(controls),
+      latestQueryFormData,
+      sliceState: {},
       sliceFormData,
       queryRequest: null,
       queryResponse: null,

@@ -155,6 +155,18 @@ function nvd3Vis(slice, payload) {
     if (svg.empty()) {
       svg = d3.select(slice.selector).append('svg');
     }
+
+    // map disabled from integer to bool array
+    if (fd.nvd3_state.disabled !== undefined) {
+      let disabled = fd.nvd3_state.disabled;
+      disabled = disabled.toString(2).padStart(payload.data.length, '0');
+      disabled = disabled.split('').map(v => v === '1');
+      data.forEach(function (series, i) {
+        /* eslint-disable no-param-reassign */
+        series.disabled = disabled[i];
+      });
+    }
+
     switch (vizType) {
       case 'line':
         if (fd.show_brush) {
@@ -169,6 +181,13 @@ function nvd3Vis(slice, payload) {
         chart.xScale(d3.time.scale.utc());
         chart.interpolate(fd.line_interpolation);
         chart.xAxis.staggerLabels(false);
+        chart.dispatch.on('stateChange', function (newState) {
+          let { disabled } = newState;
+          // store bool array as integer
+          disabled = parseInt(disabled.map(v => v ? '1' : '0').join(''), 2);
+          const newFormData = { ...fd, nvd3_state: { disabled } };
+          slice.props.actions.updateQueryFormData(newFormData, slice.props.chartKey);
+        });
         break;
 
       case 'time_pivot':
