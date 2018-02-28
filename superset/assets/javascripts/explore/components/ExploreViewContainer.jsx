@@ -270,7 +270,8 @@ ExploreViewContainer.propTypes = propTypes;
 function mapStateToProps({ explore, charts, impressionId }) {
   const chartKey = Object.keys(charts)[0];
   const chart = charts[chartKey];
-  const form_data = chart.latestQueryFormData;
+  const latestQueryFormData = chart.latestQueryFormData;
+  const form_data = { ...getFormDataFromControls(explore.controls), ...latestQueryFormData };
   return {
     isDatasourceMetaLoading: explore.isDatasourceMetaLoading,
     datasource: explore.datasource,

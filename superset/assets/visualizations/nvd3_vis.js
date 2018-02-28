@@ -157,7 +157,7 @@ function nvd3Vis(slice, payload) {
     }
 
     // map disabled from integer to bool array
-    if (fd.nvd3_state.disabled !== undefined) {
+    if (fd.nvd3_state && fd.nvd3_state.disabled) {
       let disabled = fd.nvd3_state.disabled;
       disabled = disabled.toString(2).padStart(payload.data.length, '0');
       disabled = disabled.split('').map(v => v === '1');
