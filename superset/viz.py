@@ -36,6 +36,7 @@ from six.moves import cPickle as pkl, reduce
 
 from superset import app, cache, get_manifest_file, utils
 from superset.utils import DTTM_ALIAS, merge_extra_filters
+from superset.exceptions import NullException
 
 
 config = app.config
@@ -1943,8 +1944,10 @@ class BaseDeckGLViz(BaseViz):
                 pd.to_numeric(df[spatial.get('latCol')], errors='coerce'),
             ))
         elif spatial.get('type') == 'delimited':
-
             def tupleify(s):
+                if s.strip() == 'NULL':
+                    raise NullException('Cannot read NULL in DeckGL Viz Layers. \
+                                         Please filter out <NULL> values :)')
                 p = Point(s)
                 return (p.latitude, p.longitude)
 
