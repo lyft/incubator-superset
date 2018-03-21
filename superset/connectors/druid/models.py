@@ -1284,7 +1284,7 @@ class DruidDatasource(Model, BaseDatasource):
 
             col = flt['col']
             op = flt['op']
-            eq = flt['val']
+            eq = flt.get('val')
             cond = None
             if op in ('in', 'not in'):
                 eq = [
@@ -1294,6 +1294,9 @@ class DruidDatasource(Model, BaseDatasource):
                     for types in eq]
             elif not isinstance(flt['val'], string_types):
                 eq = eq[0] if eq and len(eq) > 0 else ''
+
+            if '<NULL>' in eq:
+                eq = ''
 
             is_numeric_col = col in num_cols
             if is_numeric_col:

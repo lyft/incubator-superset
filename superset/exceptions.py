@@ -25,6 +25,8 @@ class MetricPermException(SupersetException):
 class NoDataException(SupersetException):
     status = 400
 
+class NullException(SupersetException):
+    status = 400
 
 class SupersetTemplateException(SupersetException):
     pass
