@@ -10,8 +10,6 @@ import ExploreChartHeader from './ExploreChartHeader';
 const propTypes = {
   actions: PropTypes.object.isRequired,
   addHistory: PropTypes.func,
-  onQuery: PropTypes.func,
-  onDismissRefreshOverlay: PropTypes.func,
   can_overwrite: PropTypes.bool.isRequired,
   can_download: PropTypes.bool.isRequired,
   datasource: PropTypes.object,
@@ -26,9 +24,7 @@ const propTypes = {
   form_data: PropTypes.object,
   standalone: PropTypes.bool,
   timeout: PropTypes.number,
-  refreshOverlayVisible: PropTypes.bool,
   chart: PropTypes.shape(chartPropType),
-  errorMessage: PropTypes.node,
 };
 
 class ExploreChartPanel extends React.PureComponent {
@@ -49,10 +45,6 @@ class ExploreChartPanel extends React.PureComponent {
         setControlValue={this.props.actions.setControlValue}
         timeout={this.props.timeout}
         vizType={this.props.vizType}
-        refreshOverlayVisible={this.props.refreshOverlayVisible}
-        errorMessage={this.props.errorMessage}
-        onQuery={this.props.onQuery}
-        onDismissRefreshOverlay={this.props.onDismissRefreshOverlay}
       />
     );
   }
