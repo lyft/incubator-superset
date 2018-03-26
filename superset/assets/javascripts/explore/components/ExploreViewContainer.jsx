@@ -50,7 +50,6 @@ class ExploreViewContainer extends React.Component {
       width: this.getWidth(),
       showModal: false,
       chartIsStale: false,
-      refreshOverlayVisible: false,
     };
 
     this.addHistory = this.addHistory.bind(this);
@@ -85,7 +84,7 @@ class ExploreViewContainer extends React.Component {
       this.props.actions.renderTriggered(new Date().getTime(), this.props.chart.chartKey);
     }
     if (this.hasQueryControlChanged(changedControlKeys, np.controls)) {
-      this.setState({ chartIsStale: true, refreshOverlayVisible: true });
+      this.setState({ chartIsStale: true });
     }
   }
 
@@ -109,12 +108,8 @@ class ExploreViewContainer extends React.Component {
     this.props.actions.removeControlPanelAlert();
     this.props.actions.triggerQuery(true, this.props.chart.chartKey);
 
-    this.setState({ chartIsStale: false, refreshOverlayVisible: false });
+    this.setState({ chartIsStale: false });
     this.addHistory({});
-  }
-
-  onDismissRefreshOverlay() {
-    this.setState({ refreshOverlayVisible: false });
   }
 
   onStop() {
@@ -232,11 +227,7 @@ class ExploreViewContainer extends React.Component {
         width={this.state.width}
         height={this.state.height}
         {...this.props}
-        errorMessage={this.renderErrorMessage()}
-        refreshOverlayVisible={this.state.refreshOverlayVisible}
         addHistory={this.addHistory}
-        onQuery={this.onQuery.bind(this)}
-        onDismissRefreshOverlay={this.onDismissRefreshOverlay.bind(this)}
       />);
   }
 
