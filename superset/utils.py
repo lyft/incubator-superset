@@ -825,3 +825,42 @@ def merge_request_params(form_data, params):
 def get_update_perms_flag():
     val = os.environ.get('SUPERSET_UPDATE_PERMS')
     return val.lower() not in ('0', 'false', 'no') if val else True
+
+
+def user_label(user):
+    """Given a user ORM FAB object, returns a label"""
+    if user:
+        if user.first_name and user.last_name:
+            return user.first_name + ' ' + user.last_name
+        else:
+            return user.username
+
+
+def get_or_create_main_db():
+    from superset import conf, db
+    from superset.models import core as models
+
+    logging.info('Creating database reference')
+    dbobj = (
+        db.session.query(models.Database)
+        .filter_by(database_name='main')
+        .first())
+    if not dbobj:
+        dbobj = models.Database(database_name='main')
+    dbobj.set_sqlalchemy_uri(conf.get('SQLALCHEMY_DATABASE_URI'))
+    dbobj.expose_in_sqllab = True
+    dbobj.allow_run_sync = True
+    db.session.add(dbobj)
+    db.session.commit()
+    return dbobj
+
+
+def is_adhoc_metric(metric):
+    return (isinstance(metric, dict) and
+            metric['column'] and
+            metric['aggregate'] and
+            metric['label'])
+
+
+def get_metric_names(metrics):
+    return [metric['label'] if is_adhoc_metric(metric) else metric for metric in metrics]
