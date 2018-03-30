@@ -7,13 +7,13 @@ from __future__ import unicode_literals
 
 import logging
 
+from flask import g
 from flask_appbuilder.security.sqla import models as ab_models
 from flask_appbuilder.security.sqla.manager import SecurityManager
 from sqlalchemy import or_
 
-from superset import conf, db, sm
+from superset import sql_parse
 from superset.connectors.connector_registry import ConnectorRegistry
-from superset.models import core as models
 
 READ_ONLY_MODEL_VIEWS = {
     'DatabaseAsync',
@@ -349,14 +349,9 @@ class SupersetSecurityManager(SecurityManager):
                     self.is_alpha_only(pvm))
 
     def is_sql_lab_pvm(self, pvm):
-        return (
-            pvm.view_menu.name in {
-                'SQL Lab', 'SQL Editor', 'Query Search', 'Saved Queries',
-            } or
-            pvm.permission.name in {
-                'can_sql_json', 'can_csv', 'can_search_queries', 'can_sqllab_viz',
-                'can_sqllab',
-            })
+        return pvm.view_menu.name in {'SQL Lab'} or pvm.permission.name in {
+            'can_sql_json', 'can_csv', 'can_search_queries',
+        }
 
     def is_granter_pvm(self, pvm):
         return pvm.permission.name in {
