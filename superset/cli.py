@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -137,24 +136,21 @@ def load_examples(load_test_data):
     print('Loading [Misc Charts] dashboard')
     data.load_misc_dashboard()
 
-    print('Loading [Paris GeoJson]')
+    print('Loading DECK.gl demo')
+    data.load_deck_dash()
+
+    print('Loading Paris geojson data')
     data.load_paris_iris_geojson()
-
-    print('Loading [San Francisco population polygons]')
-    data.load_sf_population_polygons()
-
-    print('Loading [Flights data]')
-    data.load_flights()
-
-    print('Loading [BART lines]')
-    data.load_bart_lines()
 
     if load_test_data:
         print('Loading [Unicode test data]')
         data.load_unicode_test_data()
 
-    print('Loading DECK.gl demo')
-    data.load_deck_dash()
+    print('Loading flights data')
+    data.load_flights()
+
+    print('Loading bart lines data')
+    data.load_bart_lines()
 
 
 @manager.option(
@@ -222,7 +218,7 @@ def import_datasources(path, sync, recursive=False):
             with f.open() as data_stream:
                 dict_import_export_util.import_from_dict(
                     db.session,
-                    yaml.safe_load(data_stream),
+                    yaml.load(data_stream),
                     sync=sync_array)
         except Exception as e:
             logging.error('Error when importing datasources from file %s', f)
