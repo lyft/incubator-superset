@@ -1098,6 +1098,7 @@ export const controls = {
     freeForm: true,
     label: t('Table Timestamp Format'),
     default: '%Y-%m-%d %H:%M:%S',
+    renderTrigger: true,
     validators: [v.nonEmpty],
     clearable: false,
     choices: D3_TIME_FORMAT_OPTIONS,
@@ -1116,6 +1117,7 @@ export const controls = {
   page_length: {
     type: 'SelectControl',
     freeForm: true,
+    renderTrigger: true,
     label: t('Page Length'),
     default: 0,
     choices: formatSelectOptions([0, 10, 25, 40, 50, 75, 100, 150, 200]),
@@ -1349,6 +1351,7 @@ export const controls = {
   table_filter: {
     type: 'CheckboxControl',
     label: t('Table Filter'),
+    renderTrigger: true,
     default: false,
     description: t('Whether to apply filter when table cell is clicked'),
   },
