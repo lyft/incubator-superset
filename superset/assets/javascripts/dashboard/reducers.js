@@ -10,7 +10,7 @@ import { applyDefaultFormData } from '../explore/stores/store';
 import { getColorFromScheme } from '../modules/colors';
 
 export function getInitialState(bootstrapData) {
-  const { user_id, datasources, common } = bootstrapData;
+  const { user_id, datasources, common, editMode } = bootstrapData;
   delete common.locale;
   delete common.language_pack;
 
@@ -88,7 +88,7 @@ export function getInitialState(bootstrapData) {
 
   return {
     charts: initCharts,
-    dashboard: { filters, dashboard, userId: user_id, datasources, common, editMode: false },
+    dashboard: { filters, dashboard, userId: user_id, datasources, common, editMode },
   };
 }
 
