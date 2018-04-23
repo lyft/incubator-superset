@@ -8,14 +8,14 @@ import logging
 from flask import Response, request
 from flask_babel import gettext as __
 
-from superset import app, appbuilder, utils
+from superset import app, appbuilder, security_manager
 import superset.models.core as models
 from superset.views.core import Superset
 
 config = app.config
 stats_logger = config.get('STATS_LOGGER')
 log_this = models.Log.log_this
-can_access = utils.can_access
+can_access = security_manager.can_access
 DAR = models.DatasourceAccessRequest
 
 
