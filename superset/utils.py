@@ -333,7 +333,7 @@ def base_json_conv(obj):
 
 class CustomJSONEncoder(JSONEncoder):
     """
-    Custom JSON serialized that handles dates, NaN and ±Infinity.
+    Custom JSON serializer that handles dates, NaN and ±Infinity.
 
         >>> dttm = datetime(1970, 1, 1)
         >>> json.dumps({'dttm': dttm}, cls=CustomJSONEncoder)
