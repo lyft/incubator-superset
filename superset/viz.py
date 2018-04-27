@@ -37,7 +37,8 @@ from six.moves import cPickle as pkl, reduce
 
 from superset import app, cache, get_manifest_file, utils
 from superset.utils import (
-    CustomJSONEncoder,
+    DateToEpochJSONEncoder,
+    DateToIsoJSONEncoder,
     DTTM_ALIAS,
     JS_MAX_INTEGER,
     merge_extra_filters,
@@ -297,7 +298,7 @@ class BaseViz(object):
     def get_json(self):
         return json.dumps(
             self.get_payload(),
-            default=utils.json_int_dttm_ser, ignore_nan=True)
+            cls=DateToEpochJSONEncoder, ignore_nan=True)
 
     def cache_key(self, query_obj):
         """
@@ -544,7 +545,7 @@ class TableViz(BaseViz):
     def json_dumps(self, obj, sort_keys=False):
         if self.form_data.get('all_columns'):
             return json.dumps(
-                obj, cls=CustomJSONEncoder, sort_keys=sort_keys)
+                obj, cls=DateToIsoJSONEncoder, sort_keys=sort_keys)
         else:
             return super(TableViz, self).json_dumps(obj)
 

@@ -333,11 +333,8 @@ def base_json_conv(obj):
 
 class CustomJSONEncoder(JSONEncoder):
     """
-    Custom JSON serializer that handles dates, NaN and ±Infinity.
+    Custom JSON serializer that handles NaN and ±Infinity.
 
-        >>> dttm = datetime(1970, 1, 1)
-        >>> json.dumps({'dttm': dttm}, cls=CustomJSONEncoder)
-        '{"dttm": "1970-01-01T00:00:00"}'
         >>> json.dumps({'answer': float('inf')}, cls=CustomJSONEncoder)
         '{"answer": null}'
 
@@ -377,20 +374,49 @@ class CustomJSONEncoder(JSONEncoder):
         val = base_json_conv(obj)
         if val is not None:
             return val
+        raise TypeError(
+            'Unserializable object {} of type {}'.format(obj, type(obj)))
+
+
+class DateToIsoJSONEncoder(CustomJSONEncoder):
+    """
+    Custom JSON serializer that handles dates.
+
+        >>> dttm = datetime(1970, 1, 1)
+        >>> json.dumps({'dttm': dttm}, cls=DateToIsoJSONEncoder)
+        '{"dttm": "1970-01-01T00:00:00"}'
+
+    """
+    def default(self, obj):
         if isinstance(obj, (datetime, date, time, pd.Timestamp)):
             return obj.isoformat()
-        else:
-            raise TypeError(
-                'Unserializable object {} of type {}'.format(obj, type(obj)))
+        return super(DateToIsoJSONEncoder, self).default(obj)
 
 
-class PessimisticCustomJSONEncoder(CustomJSONEncoder):
-    """Pessismitic version of the CustomJSONEncoder, does not fail."""
+class PessimisticDateToIsoJSONEncoder(DateToIsoJSONEncoder):
+    """Pessismitic version of the DateToIsoJSONEncoder, does not fail."""
     def default(self, obj):
         try:
-            return super(PessimisticCustomJSONEncoder, self).default(obj)
+            return super(PessimisticDateToIsoJSONEncoder, self).default(obj)
         except TypeError:
             return 'Unserializable [{}]'.format(type(obj))
+
+
+class DateToEpochJSONEncoder(CustomJSONEncoder):
+    """
+    Custom JSON serializer that handles dates.
+
+        >>> dttm = datetime(1970, 1, 1)
+        >>> json.dumps({'dttm': dttm}, cls=DateToIsoJSONEncoder)
+        '{"dttm": "1970-01-01T00:00:00"}'
+
+    """
+    def default(self, obj):
+        if isinstance(obj, (datetime, pd.Timestamp)):
+            return datetime_to_epoch(obj)
+        elif isinstance(obj, date):
+            return (obj - EPOCH.date()).total_seconds() * 1000
+        return super(DateToEpochJSONEncoder, self).default(obj)
 
 
 def datetime_to_epoch(dttm):
@@ -404,23 +430,8 @@ def now_as_float():
     return datetime_to_epoch(datetime.utcnow())
 
 
-def json_int_dttm_ser(obj):
-    """json serializer that deals with dates"""
-    val = base_json_conv(obj)
-    if val is not None:
-        return val
-    if isinstance(obj, (datetime, pd.Timestamp)):
-        obj = datetime_to_epoch(obj)
-    elif isinstance(obj, date):
-        obj = (obj - EPOCH.date()).total_seconds() * 1000
-    else:
-        raise TypeError(
-            'Unserializable object {} of type {}'.format(obj, type(obj)))
-    return obj
-
-
 def json_dumps_w_dates(payload):
-    return json.dumps(payload, default=json_int_dttm_ser)
+    return json.dumps(payload, cls=DateToEpochJSONEncoder)
 
 
 def error_msg_from_exception(e):

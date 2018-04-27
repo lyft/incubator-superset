@@ -46,8 +46,8 @@ import superset.models.core as models
 from superset.models.sql_lab import Query
 from superset.sql_parse import SupersetQuery
 from superset.utils import (
-    CustomJSONEncoder,
-    PessimisticCustomJSONEncoder,
+    DateToIsoJSONEncoder,
+    PessimisticDateToIsoJSONEncoder,
     QueryStatus,
     merge_extra_filters,
     merge_request_params,
@@ -771,7 +771,7 @@ class Superset(BaseSupersetView):
     """The base views for Superset!"""
     def json_response(self, obj, status=200):
         return Response(
-            json.dumps(obj, cls=CustomJSONEncoder),
+            json.dumps(obj, cls=DateToIsoJSONEncoder),
             status=status,
             mimetype='application/json')
 
@@ -1359,7 +1359,7 @@ class Superset(BaseSupersetView):
                 column,
                 config.get('FILTER_SELECT_ROW_LIMIT', 10000),
             ),
-            cls=CustomJSONEncoder)
+            cls=DateToIsoJSONEncoder)
         return json_success(payload)
 
     def save_or_overwrite_slice(
@@ -1736,7 +1736,7 @@ class Superset(BaseSupersetView):
                 'time': log.Log.dttm,
             })
         return json_success(
-            json.dumps(payload, cls=CustomJSONEncoder))
+            json.dumps(payload, cls=DateToIsoJSONEncoder))
 
     @api
     @has_access_api
@@ -1792,7 +1792,7 @@ class Superset(BaseSupersetView):
                     user.username)
             payload.append(d)
         return json_success(
-            json.dumps(payload, cls=CustomJSONEncoder))
+            json.dumps(payload, cls=DateToIsoJSONEncoder))
 
     @api
     @has_access_api
@@ -1821,7 +1821,7 @@ class Superset(BaseSupersetView):
             'dttm': o.changed_on,
         } for o in qry.all()]
         return json_success(
-            json.dumps(payload, cls=CustomJSONEncoder))
+            json.dumps(payload, cls=DateToIsoJSONEncoder))
 
     @api
     @has_access_api
@@ -1860,7 +1860,7 @@ class Superset(BaseSupersetView):
             'viz_type': o.Slice.viz_type,
         } for o in qry.all()]
         return json_success(
-            json.dumps(payload, cls=CustomJSONEncoder))
+            json.dumps(payload, cls=DateToIsoJSONEncoder))
 
     @api
     @has_access_api
@@ -1889,7 +1889,7 @@ class Superset(BaseSupersetView):
             'viz_type': o.viz_type,
         } for o in qry.all()]
         return json_success(
-            json.dumps(payload, cls=CustomJSONEncoder))
+            json.dumps(payload, cls=DateToIsoJSONEncoder))
 
     @api
     @has_access_api
@@ -1932,7 +1932,7 @@ class Superset(BaseSupersetView):
                     user.username)
             payload.append(d)
         return json_success(
-            json.dumps(payload, cls=CustomJSONEncoder))
+            json.dumps(payload, cls=DateToIsoJSONEncoder))
 
     @api
     @has_access_api
@@ -2330,7 +2330,7 @@ class Superset(BaseSupersetView):
             payload_json = json.loads(payload)
             payload_json['data'] = payload_json['data'][:display_limit]
         return json_success(
-            json.dumps(payload_json, cls=CustomJSONEncoder))
+            json.dumps(payload_json, cls=DateToIsoJSONEncoder))
 
     @has_access_api
     @expose('/stop_query/', methods=['POST'])
@@ -2437,7 +2437,7 @@ class Superset(BaseSupersetView):
                 return json_error_response('{}'.format(msg))
 
             resp = json_success(json.dumps(
-                {'query': query.to_dict()}, cls=CustomJSONEncoder,
+                {'query': query.to_dict()}, cls=DateToIsoJSONEncoder,
                 allow_nan=False), status=202)
             session.commit()
             return resp
@@ -2456,7 +2456,7 @@ class Superset(BaseSupersetView):
                     rendered_query,
                     return_results=True)
             payload = json.dumps(
-                data, cls=PessimisticCustomJSONEncoder)
+                data, cls=PessimisticDateToIsoJSONEncoder)
         except Exception as e:
             logging.exception(e)
             return json_error_response('{}'.format(e))
@@ -2548,7 +2548,7 @@ class Superset(BaseSupersetView):
         )
         dict_queries = {q.client_id: q.to_dict() for q in sql_queries}
         return json_success(
-            json.dumps(dict_queries, cls=CustomJSONEncoder))
+            json.dumps(dict_queries, cls=DateToIsoJSONEncoder))
 
     @has_access
     @expose('/search_queries')
@@ -2597,7 +2597,7 @@ class Superset(BaseSupersetView):
         dict_queries = [q.to_dict() for q in sql_queries]
 
         return Response(
-            json.dumps(dict_queries, cls=CustomJSONEncoder),
+            json.dumps(dict_queries, cls=DateToIsoJSONEncoder),
             status=200,
             mimetype='application/json')
 
@@ -2623,7 +2623,7 @@ class Superset(BaseSupersetView):
             'superset/basic.html',
             entry='welcome',
             title='Superset',
-            bootstrap_data=json.dumps(payload, cls=CustomJSONEncoder),
+            bootstrap_data=json.dumps(payload, cls=DateToIsoJSONEncoder),
         )
 
     @has_access
@@ -2642,7 +2642,7 @@ class Superset(BaseSupersetView):
             'superset/basic.html',
             title=username + "'s profile",
             entry='profile',
-            bootstrap_data=json.dumps(payload, cls=CustomJSONEncoder),
+            bootstrap_data=json.dumps(payload, cls=DateToIsoJSONEncoder),
         )
 
     @has_access
@@ -2656,7 +2656,7 @@ class Superset(BaseSupersetView):
         return self.render_template(
             'superset/basic.html',
             entry='sqllab',
-            bootstrap_data=json.dumps(d, cls=CustomJSONEncoder),
+            bootstrap_data=json.dumps(d, cls=DateToIsoJSONEncoder),
         )
 
     @api

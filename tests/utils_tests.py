@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
+import json
 import unittest
 import uuid
 
@@ -14,35 +15,31 @@ import numpy
 
 from superset.exceptions import SupersetException
 from superset.utils import (
-    base_json_conv, datetime_f, json_int_dttm_ser, json_iso_dttm_ser,
+    base_json_conv, datetime_f, DateToEpochJSONEncoder, DateToIsoJSONEncoder,
     JSONEncodedDict, memoized, merge_extra_filters, merge_request_params,
     parse_human_timedelta, validate_json, zlib_compress, zlib_decompress_to_string,
 )
 
 
 class UtilsTestCase(unittest.TestCase):
-    def test_json_int_dttm_ser(self):
+    def test_DateToEpochJSONEncoder(self):
         dttm = datetime(2020, 1, 1)
-        ts = 1577836800000.0
-        assert json_int_dttm_ser(dttm) == ts
-        assert json_int_dttm_ser(date(2020, 1, 1)) == ts
-        assert json_int_dttm_ser(datetime(1970, 1, 1)) == 0
-        assert json_int_dttm_ser(date(1970, 1, 1)) == 0
-        assert json_int_dttm_ser(dttm + timedelta(milliseconds=1)) == (ts + 1)
+        ts = "1577836800000.0"
+        assert json.dumps(dttm, cls=DateToEpochJSONEncoder) == ts
+        assert json.dumps(date(2020, 1, 1), cls=DateToEpochJSONEncoder) == ts
+        assert json.dumps(datetime(1970, 1, 1), cls=DateToEpochJSONEncoder) == "0.0"
+        assert json.dumps(date(1970, 1, 1), cls=DateToEpochJSONEncoder) == "0.0"
+        assert json.dumps(
+            dttm + timedelta(milliseconds=1),
+            cls=DateToEpochJSONEncoder) == "1577836800001.0"
 
-        with self.assertRaises(TypeError):
-            json_int_dttm_ser('this is not a date')
-
-    def test_json_iso_dttm_ser(self):
+    def test_DateToIsoJSONEncoder(self):
         dttm = datetime(2020, 1, 1)
         dt = date(2020, 1, 1)
         t = time()
-        assert json_iso_dttm_ser(dttm) == dttm.isoformat()
-        assert json_iso_dttm_ser(dt) == dt.isoformat()
-        assert json_iso_dttm_ser(t) == t.isoformat()
-
-        with self.assertRaises(TypeError):
-            json_iso_dttm_ser('this is not a date')
+        assert json.dumps(dttm, cls=DateToIsoJSONEncoder) == '"2020-01-01T00:00:00"'
+        assert json.dumps(dt, cls=DateToIsoJSONEncoder) == '"2020-01-01"'
+        assert json.dumps(t, cls=DateToIsoJSONEncoder) == json.dumps(t.isoformat())
 
     def test_base_json_conv(self):
         assert isinstance(base_json_conv(numpy.bool_(1)), bool) is True
