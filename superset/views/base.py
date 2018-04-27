@@ -20,7 +20,8 @@ from flask_babel import gettext as __
 from flask_babel import lazy_gettext as _
 import yaml
 
-from superset import conf, security_manager, utils
+from superset import conf, security_manager
+from superset.utils import CustomJSONEncoder
 from superset.translations.utils import get_language_pack
 
 FRONTEND_CONF_KEYS = (
@@ -46,7 +47,7 @@ def json_error_response(msg=None, status=500, stacktrace=None, payload=None):
         if stacktrace:
             payload['stacktrace'] = stacktrace
     return Response(
-        json.dumps(payload, default=utils.json_iso_dttm_ser),
+        json.dumps(payload, cls=CustomJSONEncoder),
         status=status, mimetype='application/json')
 
 

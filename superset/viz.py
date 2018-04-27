@@ -36,8 +36,12 @@ from six import string_types, text_type
 from six.moves import cPickle as pkl, reduce
 
 from superset import app, cache, get_manifest_file, utils
-from superset.utils import DTTM_ALIAS, JS_MAX_INTEGER, merge_extra_filters
-
+from superset.utils import (
+    CustomJSONEncoder,
+    DTTM_ALIAS,
+    JS_MAX_INTEGER,
+    merge_extra_filters,
+)
 
 config = app.config
 stats_logger = config.get('STATS_LOGGER')
@@ -540,7 +544,7 @@ class TableViz(BaseViz):
     def json_dumps(self, obj, sort_keys=False):
         if self.form_data.get('all_columns'):
             return json.dumps(
-                obj, default=utils.json_iso_dttm_ser, sort_keys=sort_keys)
+                obj, cls=CustomJSONEncoder, sort_keys=sort_keys)
         else:
             return super(TableViz, self).json_dumps(obj)
 

@@ -15,6 +15,13 @@ from email.utils import formatdate
 import errno
 import functools
 import json
+from json.encoder import (
+    INFINITY,
+    JSONEncoder,
+    _make_iterencode,
+    encode_basestring,
+    encode_basestring_ascii,
+)
 import logging
 import os
 import signal
@@ -252,7 +259,7 @@ def decode_dashboards(o):
         return o
 
 
-class DashboardEncoder(json.JSONEncoder):
+class DashboardEncoder(JSONEncoder):
     # pylint: disable=E0202
     def default(self, o):
         try:
@@ -262,7 +269,7 @@ class DashboardEncoder(json.JSONEncoder):
         except Exception:
             if type(o) == datetime:
                 return {'__datetime__': o.replace(microsecond=0).isoformat()}
-            return json.JSONEncoder.default(self, o)
+            return JSONEncoder.default(self, o)
 
 
 def parse_human_timedelta(s):
@@ -324,33 +331,66 @@ def base_json_conv(obj):
         return str(obj)
 
 
-def json_iso_dttm_ser(obj, pessimistic=False):
+class CustomJSONEncoder(JSONEncoder):
     """
-    json serializer that deals with dates
+    Custom JSON serialized that handles dates, NaN and ±Infinity.
 
-    >>> dttm = datetime(1970, 1, 1)
-    >>> json.dumps({'dttm': dttm}, default=json_iso_dttm_ser)
-    '{"dttm": "1970-01-01T00:00:00"}'
+        >>> dttm = datetime(1970, 1, 1)
+        >>> json.dumps({'dttm': dttm}, cls=CustomJSONEncoder)
+        '{"dttm": "1970-01-01T00:00:00"}'
+        >>> json.dumps({'answer': float('inf')}, cls=CustomJSONEncoder)
+        '{"answer": null}'
+
+    The Python `json` module encodes `NaN`, `+Infinity` and `-Infinity` as
+    the corresponding Javascript objects, but the JSON spec recommends
+    converting them to `null`.
     """
-    val = base_json_conv(obj)
-    if val is not None:
-        return val
-    if isinstance(obj, (datetime, date, time, pd.Timestamp)):
-        obj = obj.isoformat()
-    else:
-        if pessimistic:
-            return 'Unserializable [{}]'.format(type(obj))
+    def iterencode(self, o, _one_shot=False):
+        if self.check_circular:
+            markers = {}
+        else:
+            markers = None
+        if self.ensure_ascii:
+            _encoder = encode_basestring_ascii
+        else:
+            _encoder = encode_basestring
+
+        def floatstr(o, allow_nan=self.allow_nan,
+                     _repr=float.__repr__, _inf=INFINITY, _neginf=-INFINITY):
+            if o != o or o in [_inf, _neginf]:
+                if not allow_nan:
+                    raise ValueError(
+                        "Out of range float values are not JSON compliant: " +
+                        repr(o))
+                return 'null'
+            else:
+                return _repr(o)
+
+        _iterencode = _make_iterencode(
+            markers, self.default, _encoder, self.indent, floatstr,
+            self.key_separator, self.item_separator, self.sort_keys,
+            self.skipkeys, _one_shot)
+
+        return _iterencode(o, 0)
+
+    def default(self, obj):
+        val = base_json_conv(obj)
+        if val is not None:
+            return val
+        if isinstance(obj, (datetime, date, time, pd.Timestamp)):
+            return obj.isoformat()
         else:
             raise TypeError(
                 'Unserializable object {} of type {}'.format(obj, type(obj)))
-    return obj
 
 
-def pessimistic_json_iso_dttm_ser(obj):
-    """Proxy to call json_iso_dttm_ser in a pessimistic way
-
-    If one of object is not serializable to json, it will still succeed"""
-    return json_iso_dttm_ser(obj, pessimistic=True)
+class PessimisticCustomJSONEncoder(CustomJSONEncoder):
+    """Pessismitic version of the CustomJSONEncoder, does not fail."""
+    def default(self, obj):
+        try:
+            return super(PessimisticCustomJSONEncoder, self).default(obj)
+        except TypeError:
+            return 'Unserializable [{}]'.format(type(obj))
 
 
 def datetime_to_epoch(dttm):

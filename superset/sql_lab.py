@@ -21,7 +21,7 @@ from superset import app, dataframe, db, results_backend, security_manager, util
 from superset.db_engine_specs import LimitMethod
 from superset.models.sql_lab import Query
 from superset.sql_parse import SupersetQuery
-from superset.utils import get_celery_app, QueryStatus
+from superset.utils import get_celery_app, QueryStatus, CustomJSONEncoder
 
 config = app.config
 celery_app = get_celery_app(config)
@@ -237,7 +237,7 @@ def execute_sql(
                 'status': query.status,
                 'query': query.to_dict(),
             },
-            default=utils.json_iso_dttm_ser)
+            cls=CustomJSONEncoder)
 
     cdf = convert_results_to_df(cursor_description, data)
 
@@ -265,7 +265,7 @@ def execute_sql(
     if store_results:
         key = '{}'.format(uuid.uuid4())
         logging.info('Storing results in results backend, key: {}'.format(key))
-        json_payload = json.dumps(payload, default=utils.json_iso_dttm_ser)
+        json_payload = json.dumps(payload, cls=CustomJSONEncoder)
         cache_timeout = database.cache_timeout
         if cache_timeout is None:
             cache_timeout = config.get('CACHE_DEFAULT_TIMEOUT', 0)
