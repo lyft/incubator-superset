@@ -422,7 +422,7 @@ class BaseViz(object):
     def json_dumps(self, obj, sort_keys=False):
         return json.dumps(
             obj,
-            default=utils.json_int_dttm_ser,
+            cls=DateToEpochJSONEncoder,
             ignore_nan=True,
             sort_keys=sort_keys,
         )

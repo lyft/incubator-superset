@@ -15,13 +15,28 @@ import numpy
 
 from superset.exceptions import SupersetException
 from superset.utils import (
-    base_json_conv, datetime_f, DateToEpochJSONEncoder, DateToIsoJSONEncoder,
-    JSONEncodedDict, memoized, merge_extra_filters, merge_request_params,
-    parse_human_timedelta, validate_json, zlib_compress, zlib_decompress_to_string,
+    CustomJSONEncoder,
+    DateToEpochJSONEncoder,
+    DateToIsoJSONEncoder,
+    JSONEncodedDict,
+    PessimisticDateToIsoJSONEncoder,
+    base_json_conv,
+    datetime_f,
+    memoized,
+    merge_extra_filters,
+    merge_request_params,
+    parse_human_timedelta,
+    validate_json,
+    zlib_compress,
+    zlib_decompress_to_string,
 )
 
 
 class UtilsTestCase(unittest.TestCase):
+    def test_CustomJSONEncoder(self):
+        invalid = [float('nan'), float('inf'), float('-inf')]
+        assert json.dumps(invalid, cls=CustomJSONEncoder) == '[null, null, null]'
+
     def test_DateToEpochJSONEncoder(self):
         dttm = datetime(2020, 1, 1)
         ts = "1577836800000.0"
@@ -32,6 +47,10 @@ class UtilsTestCase(unittest.TestCase):
         assert json.dumps(
             dttm + timedelta(milliseconds=1),
             cls=DateToEpochJSONEncoder) == "1577836800001.0"
+
+    def test_PessimisticDateToIsoJSONEncoder(self):
+        print(repr(json.dumps(json, cls=PessimisticDateToIsoJSONEncoder)))
+        assert json.dumps(json, cls=PessimisticDateToIsoJSONEncoder) == '"Unserializable [<type \'module\'>]"'
 
     def test_DateToIsoJSONEncoder(self):
         dttm = datetime(2020, 1, 1)

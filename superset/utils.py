@@ -408,7 +408,7 @@ class DateToEpochJSONEncoder(CustomJSONEncoder):
 
         >>> dttm = datetime(1970, 1, 1)
         >>> json.dumps({'dttm': dttm}, cls=DateToIsoJSONEncoder)
-        '{"dttm": "1970-01-01T00:00:00"}'
+        '{"dttm": 0.0}'
 
     """
     def default(self, obj):
