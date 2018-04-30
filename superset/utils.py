@@ -333,16 +333,38 @@ def base_json_conv(obj):
 
 class CustomJSONEncoder(JSONEncoder):
     """
-    Custom JSON serializer that handles NaN and ±Infinity.
+    Custom JSON serializer that handles NaN and ±Infinity properly.
 
         >>> json.dumps({'answer': float('inf')}, cls=CustomJSONEncoder)
         '{"answer": null}'
 
     The Python `json` module encodes `NaN`, `+Infinity` and `-Infinity` as
     the corresponding Javascript objects, but the JSON spec recommends
-    converting them to `null`.
+    converting them to `null`. This custom encoder is needed because the
+    browser will choke on these values:
+
+        >>> json.dumps(float('nan'))
+        'NaN'
+
+    But on the browser console:
+
+        > JSON.parse('NaN')
+        Uncaught SyntaxError: Unexpected token N in JSON at position 0
+            at JSON.parse (<anonymous>)
+            at <anonymous>:1:6
+
     """
     def iterencode(self, o, _one_shot=False):
+        """
+        Encode object as JSON.
+
+        This is basically the `iterencode` method copied from the base class,
+        with two differences:
+
+          - The inner `floatstr` function encodes NaN/Infinity as "null".
+          - It never uses the C encoder, otherwise it would bypass `floatstr`.
+
+        """
         if self.check_circular:
             markers = {}
         else:

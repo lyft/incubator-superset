@@ -26,12 +26,12 @@ from flask import escape, request
 from flask_babel import lazy_gettext as _
 import geohash
 from geopy.point import Point
+import json
 from markdown import markdown
 import numpy as np
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
 import polyline
-import simplejson as json
 from six import string_types, text_type
 from six.moves import cPickle as pkl, reduce
 
