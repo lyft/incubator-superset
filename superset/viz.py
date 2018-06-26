@@ -27,6 +27,7 @@ from flask import request
 from flask_babel import lazy_gettext as _
 import geohash
 from geopy.point import Point
+from jinja2.sandbox import SandboxedEnvironment
 from markdown import markdown
 import numpy as np
 import pandas as pd
@@ -36,7 +37,9 @@ import simplejson as json
 from six import string_types, text_type
 from six.moves import cPickle as pkl, reduce
 
-from superset import app, cache, get_css_manifest_files, utils
+from superset import app, cache, db, get_css_manifest_files, utils
+from superset.jinja_context import current_user_id, current_username
+from superset.models.tags import ObjectTypes, Tag, TaggedObject
 from superset.utils import DTTM_ALIAS, JS_MAX_INTEGER, merge_extra_filters
 
 
@@ -2589,6 +2592,65 @@ class PartitionViz(NVD3TimeSeriesViz):
         else:
             levels = self.levels_for('agg_sum', [DTTM_ALIAS] + groups, df)
         return self.nest_values(levels)
+
+
+class TagViz(BaseViz):
+
+    viz_type = 'tag'
+    verbose_name = _('Tagged content')
+    is_timeseries = False
+
+    def query_obj(self):
+        return None
+
+    def get_df(self, query_obj=None):
+        return None
+
+    def _get_url(self, obj):
+        if obj.object_type == ObjectTypes.query:
+            url = '/superset/sqllab?savedQueryId={0}'.format(obj.object_id)
+        elif obj.object_type == ObjectTypes.chart:
+            url = (
+                '/superset/explore/?form_data=%7B%22slice_id%22%3A%20{0}%7D'
+                .format(obj.object_id)
+            )
+        elif obj.object_type == ObjectTypes.dashboard:
+            url = '/superset/dashboard/{0}/'.format(obj.object_id)
+
+        return url
+
+    def _process_template(self, content):
+        env = SandboxedEnvironment()
+        template = env.from_string(content)
+        context = {
+            'current_user_id': current_user_id,
+            'current_username': current_username,
+        }
+        return template.render(context)
+
+    def get_data(self, df):
+        fd = self.form_data
+        tags = fd.get('tags') or []
+        types = fd.get('tag_types')
+
+        session = db.create_scoped_session()
+        query = session.query(TaggedObject).join(Tag)
+        if tags:
+            tags = [self._process_template(tag) for tag in tags]
+            query = query.filter(Tag.name.in_(tags))
+        if types:
+            query = query.filter(TaggedObject.object_type.in_(types))
+
+        objects = [
+            {
+                'tag': obj.tag.name,
+                'id': obj.object_id,
+                'type': obj.object_type.name,
+                'url': self._get_url(obj),
+            }
+            for obj in query
+        ]
+        return objects
 
 
 viz_types = {

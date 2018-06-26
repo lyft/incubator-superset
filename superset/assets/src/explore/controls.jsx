@@ -2152,5 +2152,33 @@ export const controls = {
     description: t('Whether to normalize the histogram'),
     default: false,
   },
+
+  tags: {
+    type: 'SelectControl',
+    multi: true,
+    freeForm: true,
+    label: t('Tags'),
+    default: [],
+    choices: [
+      ['owner:{{ current_user_id() }}', 'Owned by me'],
+      ['favorited_by:{{ current_user_id() }}', 'Favorited by me'],
+    ],
+    description: t('A list of tags used to filter queries, charts and ' +
+    'dashboards. If more than one tag is present, they will be combined ' +
+    'with an OR'),
+  },
+  tag_types: {
+    type: 'SelectControl',
+    multi: true,
+    freeForm: false,
+    label: t('Show'),
+    default: ['dashboard', 'chart', 'query'],
+    choices: [
+      ['dashboard', 'Dashboards'],
+      ['chart', 'Charts'],
+      ['query', 'Queries'],
+    ],
+    description: t('Show only these object types'),
+  },
 };
 export default controls;

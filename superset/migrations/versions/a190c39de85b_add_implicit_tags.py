@@ -11,20 +11,20 @@ revision = 'a190c39de85b'
 down_revision = 'bddc498dd179'
 
 from alembic import op
-from flask_appbuilder.models.mixins import AuditMixin
 import sqlalchemy as sa
 from sqlalchemy import Column, Enum, Integer, ForeignKey, String, Table
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
 from superset import db
+from superset.models.helpers import AuditMixinNullable
 from superset.models.tags import ObjectTypes, TagTypes
 
 
 Base = declarative_base()
 
 
-class Tag(Base):
+class Tag(Base, AuditMixinNullable):
     """A tag attached to an object (query, chart or dashboard)."""
     __tablename__ = 'tag'
 
@@ -33,7 +33,7 @@ class Tag(Base):
     type = Column(Enum(TagTypes))
 
 
-class TaggedObject(Base):
+class TaggedObject(Base, AuditMixinNullable):
     __tablename__ = 'tagged_object'
 
     id = Column(Integer, primary_key=True)
@@ -66,7 +66,7 @@ dashboard_user = Table(
 )
 
 
-class Slice(Base, AuditMixin):
+class Slice(Base, AuditMixinNullable):
     """Declarative class to do query in upgrade"""
     __tablename__ = 'slices'
 
@@ -74,7 +74,7 @@ class Slice(Base, AuditMixin):
     owners = relationship("User", secondary=slice_user)
 
 
-class Dashboard(Base, AuditMixin):
+class Dashboard(Base, AuditMixinNullable):
     """Declarative class to do query in upgrade"""
     __tablename__ = 'dashboards'
     id = Column(Integer, primary_key=True)

@@ -1845,6 +1845,35 @@ export const visTypes = {
       sections.NVD3TimeSeries[1],
     ],
   },
+
+  tag: {
+    label: t('Tagged content'),
+    controlPanelSections: [
+      {
+        label: t('Tags'),
+        expanded: true,
+        controlSetRows: [
+          ['tags'],
+          ['tag_types'],
+        ],
+      },
+    ],
+    sectionOverrides: {
+      datasourceAndVizType: {
+        label: t('Chart Type'),
+        controlSetRows: [
+          ['viz_type'],
+          ['slice_id', 'cache_timeout'],
+        ],
+      },
+      sqlaTimeSeries: {
+        controlSetRows: [],
+      },
+      druidTimeSeries: {
+        controlSetRows: [],
+      },
+    },
+  },
 };
 
 export default visTypes;

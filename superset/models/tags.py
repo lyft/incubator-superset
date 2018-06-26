@@ -8,6 +8,7 @@ import enum
 
 from flask_appbuilder import Model
 from sqlalchemy import Column, Enum, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
 
 from superset.models.helpers import AuditMixinNullable
 
@@ -59,3 +60,5 @@ class TaggedObject(Model, AuditMixinNullable):
     tag_id = Column(Integer, ForeignKey('tag.id'))
     object_id = Column(Integer)
     object_type = Column(Enum(ObjectTypes))
+
+    tag = relationship('Tag')
