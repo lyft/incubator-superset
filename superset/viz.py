@@ -2657,7 +2657,7 @@ class TagViz(BaseViz):
                 TaggedObject.object_id == SavedQuery.id,
                 TaggedObject.object_type == ObjectTypes.query,
             ),
-        )
+        ).group_by(TaggedObject.object_id, TaggedObject.object_type)
 
         objects = [
             {
