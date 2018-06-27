@@ -36,7 +36,7 @@ import sqlparse
 from superset import app, db, db_engine_specs, security_manager, utils
 from superset.connectors.connector_registry import ConnectorRegistry
 from superset.models.helpers import AuditMixinNullable, ImportMixin, set_perm
-from superset.viz import viz_types
+import superset.viz
 install_aliases()
 from urllib import parse  # noqa
 
@@ -156,7 +156,7 @@ class Slice(Model, AuditMixinNullable, ImportMixin):
     @utils.memoized
     def viz(self):
         d = json.loads(self.params)
-        viz_class = viz_types[self.viz_type]
+        viz_class = superset.viz.viz_types[self.viz_type]
         # pylint: disable=no-member
         return viz_class(self.datasource, form_data=d)
 
@@ -249,7 +249,7 @@ class Slice(Model, AuditMixinNullable, ImportMixin):
         slice_params['slice_name'] = self.slice_name
         slice_params['viz_type'] = self.viz_type if self.viz_type else 'table'
 
-        return viz_types[slice_params.get('viz_type')](
+        return superset.viz.viz_types[slice_params.get('viz_type')](
             self.datasource,
             form_data=slice_params,
             force=force,
@@ -287,6 +287,10 @@ class Slice(Model, AuditMixinNullable, ImportMixin):
         logging.info('Final slice: {}'.format(slc_to_import.to_json()))
         session.flush()
         return slc_to_import.id
+
+    @property
+    def url(self):
+        return '/superset/explore/?form_data=%7B%22slice_id%22%3A%20{0}%7D'.format(self.id)
 
 
 sqla.event.listen(Slice, 'before_insert', set_related_perm)

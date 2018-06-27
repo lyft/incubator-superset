@@ -34,11 +34,14 @@ import pandas as pd
 from pandas.tseries.frequencies import to_offset
 import polyline
 import simplejson as json
+from sqlalchemy import and_
 from six import string_types, text_type
 from six.moves import cPickle as pkl, reduce
 
 from superset import app, cache, db, get_css_manifest_files, utils
 from superset.jinja_context import current_user_id, current_username
+import superset.models.core
+from superset.models.sql_lab import SavedQuery
 from superset.models.tags import ObjectTypes, Tag, TaggedObject
 from superset.utils import DTTM_ALIAS, JS_MAX_INTEGER, merge_extra_filters
 
@@ -2606,19 +2609,6 @@ class TagViz(BaseViz):
     def get_df(self, query_obj=None):
         return None
 
-    def _get_url(self, obj):
-        if obj.object_type == ObjectTypes.query:
-            url = '/superset/sqllab?savedQueryId={0}'.format(obj.object_id)
-        elif obj.object_type == ObjectTypes.chart:
-            url = (
-                '/superset/explore/?form_data=%7B%22slice_id%22%3A%20{0}%7D'
-                .format(obj.object_id)
-            )
-        elif obj.object_type == ObjectTypes.dashboard:
-            url = '/superset/dashboard/{0}/'.format(obj.object_id)
-
-        return url
-
     def _process_template(self, content):
         env = SandboxedEnvironment()
         template = env.from_string(content)
@@ -2634,23 +2624,77 @@ class TagViz(BaseViz):
         types = fd.get('tag_types')
 
         session = db.create_scoped_session()
-        query = session.query(TaggedObject).join(Tag)
+        query = session.query(
+            TaggedObject,
+            superset.models.core.Dashboard,
+            superset.models.core.Slice,
+            SavedQuery,
+        ).join(Tag)
+
+        # filter tags
         if tags:
             tags = [self._process_template(tag) for tag in tags]
             query = query.filter(Tag.name.in_(tags))
         if types:
             query = query.filter(TaggedObject.object_type.in_(types))
 
+        # get names
+        query = query.outerjoin(
+            superset.models.core.Dashboard,
+            and_(
+                TaggedObject.object_id == superset.models.core.Dashboard.id,
+                TaggedObject.object_type == ObjectTypes.dashboard,
+            ),
+        ).outerjoin(
+            superset.models.core.Slice,
+            and_(
+                TaggedObject.object_id == superset.models.core.Slice.id,
+                TaggedObject.object_type == ObjectTypes.chart,
+            ),
+        ).outerjoin(
+            SavedQuery,
+            and_(
+                TaggedObject.object_id == SavedQuery.id,
+                TaggedObject.object_type == ObjectTypes.query,
+            ),
+        )
+
         objects = [
             {
-                'tag': obj.tag.name,
-                'id': obj.object_id,
-                'type': obj.object_type.name,
+                'tag': obj.TaggedObject.tag.name,
+                'id': obj.TaggedObject.object_id,
+                'type': obj.TaggedObject.object_type.name,
+                'name': self._get_name(obj),
                 'url': self._get_url(obj),
+                'changed_on': self._get_changed_on(obj),
             }
             for obj in query
         ]
         return objects
+
+    def _get_name(self, obj):
+        if obj.Dashboard:
+            return obj.Dashboard.dashboard_title
+        elif obj.Slice:
+            return obj.Slice.slice_name
+        elif obj.SavedQuery:
+            return obj.SavedQuery.label
+
+    def _get_url(self, obj):
+        if obj.Dashboard:
+            return obj.Dashboard.url
+        elif obj.Slice:
+            return obj.Slice.url
+        elif obj.SavedQuery:
+            return obj.SavedQuery.url
+
+    def _get_changed_on(self, obj):
+        if obj.Dashboard:
+            return obj.Dashboard.changed_on
+        elif obj.Slice:
+            return obj.Slice.changed_on
+        elif obj.SavedQuery:
+            return obj.SavedQuery.changed_on
 
 
 viz_types = {

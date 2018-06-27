@@ -81,8 +81,8 @@ class Dashboard(Base, AuditMixinNullable):
     owners = relationship("User", secondary=dashboard_user)
 
 
-class Query(Base):
-    __tablename__ = 'query'
+class SavedQuery(Base):
+    __tablename__ = 'saved_query'
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('ab_user.id'))
 
@@ -168,7 +168,7 @@ def upgrade():
             )
             session.add(tagged_object)
 
-    for query in session.query(Query):
+    for query in session.query(SavedQuery):
         name = 'owner:{0}'.format(query.user_id)
         tag = get_tag(name, session, TagTypes.owner)
         tagged_object = TaggedObject(
