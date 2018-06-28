@@ -43,6 +43,7 @@ function tagWidget(slice, payload) {
       <TableHeaderColumn
         dataField="url"
         dataFormat={linkFormatter}
+        width="50%"
       >Name</TableHeaderColumn>
       <TableHeaderColumn dataField="type" dataSort>Type</TableHeaderColumn>
       <TableHeaderColumn

@@ -47,7 +47,7 @@ class Tag(Model, AuditMixinNullable):
 
     __tablename__ = 'tag'
     id = Column(Integer, primary_key=True)
-    name = Column(String(250))
+    name = Column(String(250), unique=True)
     type = Column(Enum(TagTypes))
 
 
