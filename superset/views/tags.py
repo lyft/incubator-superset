@@ -9,13 +9,12 @@ import simplejson as json
 
 from flask import Response, request
 from flask_appbuilder import expose
-from flask_babel import gettext as __
-from sqlalchemy import and_
+from sqlalchemy import and_, func
 from werkzeug.routing import BaseConverter
 
 from superset import app, appbuilder, db
 from superset.models.tags import Tag, TaggedObject, TagTypes, ObjectTypes
-from .base import BaseSupersetView, json_error_response
+from .base import BaseSupersetView
 
 
 class ObjectTypeConverter(BaseConverter):
@@ -31,25 +30,37 @@ class ObjectTypeConverter(BaseConverter):
 
 class TagView(BaseSupersetView):
 
+    @expose('/tags/suggestions/', methods=['GET'])
+    def suggestions(self):
+        query = db.session.query(
+            TaggedObject,
+        ).group_by(TaggedObject.tag_id).order_by(func.count().desc()).all()
+        tags = json.dumps([
+            {'id': obj.tag.id, 'name': obj.tag.name} for obj in query])
+
+        return Response(tags, status=200, content_type='application/json')
+
     @expose('/tags/<object_type:object_type>/<int:object_id>/', methods=['GET'])
     def get(self, object_type, object_id):
         """List all tags a given object has."""
         query = db.session.query(TaggedObject).filter(and_(
             TaggedObject.object_type == object_type,
             TaggedObject.object_id == object_id))
-        tags = json.dumps([obj.tag.name for obj in query])
+        tags = json.dumps([
+            {'id': obj.tag.id, 'name': obj.tag.name} for obj in query])
 
         return Response(tags, status=200, content_type='application/json')
 
     @expose('/tags/<object_type:object_type>/<int:object_id>/', methods=['POST'])
     def post(self, object_type, object_id):
+        """Add new tags to an object."""
         tagged_objects = []
-        for value in request.get_json(force=True):
-            if ':' in value:
-                type_name, name = value.split(':', 1)
+        for name in request.get_json(force=True):
+            if ':' in name:
+                type_name = name.split(':', 1)[0]
                 type_ = TagTypes[type_name]
             else:
-                type_, name = TagTypes.custom, value
+                type_ = TagTypes.custom
 
             tag = db.session.query(Tag).filter_by(name=name, type=type_).first()
             if not tag:
@@ -70,6 +81,7 @@ class TagView(BaseSupersetView):
 
     @expose('/tags/<object_type:object_type>/<int:object_id>/', methods=['DELETE'])
     def delete(self, object_type, object_id):
+        """Remove tags from an object."""
         tag_names = request.get_json(force=True)
         if not tag_names:
             return Response(status=403)
@@ -80,7 +92,7 @@ class TagView(BaseSupersetView):
             TaggedObject.tag.has(Tag.name.in_(tag_names)),
         ).delete(synchronize_session=False)
         db.session.commit()
-        
+
         return Response(status=204)  # 204 NO CONTENT
 
 
