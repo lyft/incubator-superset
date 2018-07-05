@@ -24,20 +24,29 @@
  */
 .react-tags {
   position: relative;
+  display: inline-block;
   padding: 6px 0 0 6px;
-  border: 1px solid #D1D1D1;
+  margin: 0 10px;
+  border: 1px solid #F1F1F1;
   border-radius: 1px;
 
   /* shared font styles */
-  font-size: 0.8em;
+  font-size: 10px;
   line-height: 1.2;
 
   /* clicking anywhere will focus the input */
   cursor: text;
 }
 
+.react-tags-rw {
+  display: inline-block;
+  margin: 0 10px;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
 .react-tags.is-focused {
-  border-color: #B1B1B1;
+  border-color: #C1C1C1;
 }
 
 .react-tags__selected {

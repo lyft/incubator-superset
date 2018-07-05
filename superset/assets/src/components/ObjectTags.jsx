@@ -17,7 +17,7 @@ const propTypes = {
 };
 
 const defaultProps = {
-  editable: false,
+  editable: true,
   includeTypes: false,
 };
 
@@ -105,7 +105,7 @@ export default class ObjectTags extends React.Component {
 
   renderReadOnlyTags() {
     return (
-      <div>
+      <div className="react-tags-rw">
         {this.state.tags.map(tag => <Label bsStyle="primary">{tag.name}</Label>)}
       </div>
     );

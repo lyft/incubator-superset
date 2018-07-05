@@ -2,13 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import {
   BootstrapTable,
-  TableHeaderColumn
+  TableHeaderColumn,
 } from 'react-bootstrap-table';
 
 import 'react-bootstrap-table/css/react-bootstrap-table.css';
 import './tag.css';
-
-import ObjectTags from '../components/ObjectTags';
 
 
 function linkFormatter(cell, row) {
@@ -32,8 +30,6 @@ function tagWidget(slice, payload) {
   }));
 
   ReactDOM.render(
-    <div>
-      <ObjectTags object_type={'dashboard'} object_id={10} />
     <BootstrapTable
       data={data}
       bordered={false}
@@ -58,7 +54,7 @@ function tagWidget(slice, payload) {
         dataFormat={onChangeFormatter}
         dataSort
       >Changed on</TableHeaderColumn>
-    </BootstrapTable></div>,
+    </BootstrapTable>,
     document.getElementById(slice.containerId),
   );
 }

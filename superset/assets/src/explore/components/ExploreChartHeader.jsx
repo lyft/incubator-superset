@@ -10,6 +10,7 @@ import FaveStar from '../../components/FaveStar';
 import TooltipWrapper from '../../components/TooltipWrapper';
 import Timer from '../../components/Timer';
 import CachedLabel from '../../components/CachedLabel';
+import ObjectTags from '../../components/ObjectTags';
 import { t } from '../../locales';
 
 const CHART_STATUS_MAP = {
@@ -108,6 +109,10 @@ class ExploreChartHeader extends React.PureComponent {
           </TooltipWrapper>
         </span>
         }
+        <ObjectTags
+          object_type={'chart'}
+          object_id={parseInt(this.props.chart.chartKey.split('_')[1], 10)}
+        />
         {this.props.chart.sliceFormData &&
           <AlteredSliceTag
             origFormData={this.props.chart.sliceFormData}
