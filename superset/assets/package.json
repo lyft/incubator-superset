@@ -172,5 +172,8 @@
     "webpack": "^3.10.0",
     "webpack-manifest-plugin": "2.0.3",
     "webworkify-webpack": "2.1.2"
+  },
+  "resolutions": {
+    "eslint-scope": "3.7.1"
   }
 }
