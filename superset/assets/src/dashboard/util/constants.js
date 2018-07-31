@@ -13,6 +13,7 @@ export const NEW_MARKDOWN_ID = 'NEW_MARKDOWN_ID';
 export const NEW_ROW_ID = 'NEW_ROW_ID';
 export const NEW_TAB_ID = 'NEW_TAB_ID';
 export const NEW_TABS_ID = 'NEW_TABS_ID';
+export const NEW_TAGS_ID = 'NEW_TAGS_ID';
 
 // grid constants
 export const DASHBOARD_ROOT_DEPTH = 0;

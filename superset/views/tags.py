@@ -180,6 +180,7 @@ class TagView(BaseSupersetView):
 
         objects = json.dumps([
             {
+                'id': get_attribute(obj, 'id'),
                 'type': obj.TaggedObject.object_type.name,
                 'name': get_name(obj),
                 'url': get_attribute(obj, 'url'),

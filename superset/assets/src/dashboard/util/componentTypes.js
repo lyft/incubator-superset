@@ -10,6 +10,7 @@ export const NEW_COMPONENT_SOURCE_TYPE = 'NEW_COMPONENT_SOURCE_TYPE';
 export const ROW_TYPE = 'DASHBOARD_ROW_TYPE';
 export const TABS_TYPE = 'DASHBOARD_TABS_TYPE';
 export const TAB_TYPE = 'DASHBOARD_TAB_TYPE';
+export const TAGS_TYPE = 'DASHBOARD_TAGS_TYPE';
 
 export default {
   CHART_TYPE,
@@ -24,4 +25,5 @@ export default {
   ROW_TYPE,
   TABS_TYPE,
   TAB_TYPE,
+  TAGS_TYPE,
 };
