@@ -5,12 +5,12 @@ from __future__ import unicode_literals
 
 import os
 import logging
-from flask import Response, request
+from flask import Response, request, g
 from flask_babel import gettext as __
 from flask_appbuilder import expose
 from flask_appbuilder.security.decorators import has_access_api
 
-from superset import app, appbuilder, utils
+from superset import app, appbuilder, utils, security_manager
 import superset.models.core as models
 from superset.views.core import Superset
 
@@ -36,19 +36,19 @@ def json_success(json_msg, status=200):
 
 class Lyft(Superset):
 
-    def datasource_access(self, datasource, user=None):
-        if SECRET_KEY is None:
-            logging.error('No secret loaded')
-            return False
+    def impersonate(self, email):
+        user = security_manager.find_user(email=email)
+        if not user:
+            raise Exception("Email not found")
+        g.user = user
 
-        tom_request_key = request.headers.get('TOM_ACCESS_KEY')
-        return tom_request_key == SECRET_KEY
-
-    @has_access_api
     @expose('/sql_json/', methods=['POST', 'GET'])
     @log_this
     def sql_json(self):
-        return super(Lyft, self).sql_json()
+        impersonate = request.headers.get('IMPERSONATE')
+        if impersonate:
+            self.impersonate(impersonate)
+        return self.sql_json_call(request)
 
 
 appbuilder.add_view_no_menu(Lyft)
