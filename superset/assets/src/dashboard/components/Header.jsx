@@ -19,8 +19,6 @@ import { chartPropShape } from '../util/propShapes';
 import { t } from '../../locales';
 import { UNDO_LIMIT, SAVE_TYPE_OVERWRITE } from '../util/constants';
 
-const CSRF_TOKEN = (document.getElementById('csrf_token') || {}).value;
-
 const propTypes = {
   addSuccessToast: PropTypes.func.isRequired,
   addDangerToast: PropTypes.func.isRequired,
@@ -83,19 +81,8 @@ class Header extends React.PureComponent {
       false,
     );
     this.fetchSuggestions = fetchSuggestions.bind(this, false);
-    this.deleteTag = deleteTag.bind(
-      this,
-      CSRF_TOKEN,
-      'dashboard',
-      props.dashboardInfo.id,
-    );
-    this.addTag = addTag.bind(
-      this,
-      CSRF_TOKEN,
-      'dashboard',
-      props.dashboardInfo.id,
-      false,
-    );
+    this.deleteTag = deleteTag.bind(this, 'dashboard', props.dashboardInfo.id);
+    this.addTag = addTag.bind(this, 'dashboard', props.dashboardInfo.id, false);
   }
 
   componentWillReceiveProps(nextProps) {
