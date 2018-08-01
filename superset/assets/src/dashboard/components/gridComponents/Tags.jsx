@@ -18,6 +18,7 @@ import {
   GRID_MIN_COLUMN_COUNT,
   GRID_MIN_ROW_UNITS,
   GRID_BASE_UNIT,
+  STANDARD_TAGS,
   TAGGED_CONTENT_TYPES,
 } from '../../util/constants';
 
@@ -65,7 +66,7 @@ class Tags extends React.PureComponent {
     this.state = {
       isFocused: false,
       data: [],
-      tagSuggestions: [],
+      tagSuggestions: STANDARD_TAGS,
     };
 
     this.handleChangeFocus = this.handleChangeFocus.bind(this);
@@ -116,7 +117,10 @@ class Tags extends React.PureComponent {
 
   fetchTagSuggestions() {
     fetchSuggestions(false, suggestions => {
-      this.setState({ tagSuggestions: suggestions.map(tag => tag.name) });
+      const tagSuggestions = STANDARD_TAGS.concat(
+        suggestions.map(tag => tag.name),
+      );
+      this.setState({ tagSuggestions });
     });
   }
 

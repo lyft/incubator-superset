@@ -43,3 +43,7 @@ export const SAVE_TYPE_NEWDASHBOARD = 'newDashboard';
 
 // objects that can be tagged
 export const TAGGED_CONTENT_TYPES = ['dashboard', 'chart', 'query'];
+export const STANDARD_TAGS = [
+  ['owner:{{ current_user_id() }}', 'Owned by me'],
+  ['favorited_by:{{ current_user_id() }}', 'Favorited by me'],
+];
