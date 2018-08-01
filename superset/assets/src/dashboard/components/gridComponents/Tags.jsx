@@ -7,6 +7,7 @@ import 'brace/theme/textmate';
 import { BootstrapTable, TableHeaderColumn } from 'react-bootstrap-table';
 import moment from 'moment';
 import { unsafe } from 'reactable';
+import 'whatwg-fetch';
 
 import DeleteComponentButton from '../DeleteComponentButton';
 import DragDroppable from '../dnd/DragDroppable';
@@ -109,20 +110,21 @@ class Tags extends React.PureComponent {
     }
   }
 
-  fetchResults() {
-    const url = `/tagview/tagged_objects/?tags=${
-      this.state.tags
-    }&types={this.state.tags}`;
-    fetch(url)
-      .then(response => response.json())
-      .then(data => this.setState({ data }));
-  }
-
   setEditor(editor) {
     editor.getSession().setUseWrapMode(true);
     this.setState({
       editor,
     });
+  }
+
+  fetchResults() {
+    const url = `/tagview/tagged_objects/?tags=${
+      this.state.tags
+    }&types={this.state.tags}`;
+
+    window.fetch(url)
+      .then(response => response.json())
+      .then(data => this.setState({ data }));
   }
 
   handleChangeFocus(nextFocus) {
