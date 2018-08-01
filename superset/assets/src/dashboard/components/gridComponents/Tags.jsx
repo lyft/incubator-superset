@@ -1,25 +1,24 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import cx from 'classnames';
-import AceEditor from 'react-ace';
-import 'brace/mode/markdown';
-import 'brace/theme/textmate';
+import { ListGroup, ListGroupItem, Panel } from 'react-bootstrap';
 import { BootstrapTable, TableHeaderColumn } from 'react-bootstrap-table';
 import moment from 'moment';
 import { unsafe } from 'reactable';
 import 'whatwg-fetch';
 
-import DeleteComponentButton from '../DeleteComponentButton';
 import DragDroppable from '../dnd/DragDroppable';
 import ResizableContainer from '../resizable/ResizableContainer';
-import MarkdownModeDropdown from '../menu/MarkdownModeDropdown';
+import SelectControl from '../../../explore/components/controls/SelectControl';
 import WithPopoverMenu from '../menu/WithPopoverMenu';
 import { componentShape } from '../../util/propShapes';
+import { fetchSuggestions } from '../../../welcome/Tags';
 import { ROW_TYPE, COLUMN_TYPE } from '../../util/componentTypes';
 import {
   GRID_MIN_COLUMN_COUNT,
   GRID_MIN_ROW_UNITS,
   GRID_BASE_UNIT,
+  TAGGED_CONTENT_TYPES,
 } from '../../util/constants';
 
 const propTypes = {
@@ -46,14 +45,6 @@ const propTypes = {
 
 const defaultProps = {};
 
-const markdownPlaceHolder = `# ✨Tags
-## ✨Tags
-### ✨Tags
-
-<br />
-
-Click here to edit [markdown](https://bit.ly/1dQOfRK)`;
-
 function linkFormatter(cell, row) {
   const url = `${cell}`;
   return (
@@ -73,91 +64,59 @@ class Tags extends React.PureComponent {
     super(props);
     this.state = {
       isFocused: false,
-      markdownSource: props.component.meta.code,
-      editor: null,
-      editorMode: 'preview',
-      tags: ['test'],
-      types: ['chart'],
       data: [],
+      tagSuggestions: [],
     };
 
     this.handleChangeFocus = this.handleChangeFocus.bind(this);
-    this.handleChangeEditorMode = this.handleChangeEditorMode.bind(this);
-    this.handleMarkdownChange = this.handleMarkdownChange.bind(this);
     this.handleDeleteComponent = this.handleDeleteComponent.bind(this);
-    this.setEditor = this.setEditor.bind(this);
+    this.handleUpdateMeta = this.handleUpdateMeta.bind(this);
+    this.handleChangeTags = this.handleUpdateMeta.bind(this, 'tags');
+    this.handleChangeTypes = this.handleUpdateMeta.bind(this, 'types');
+
     this.fetchResults = this.fetchResults.bind(this);
+    this.fetchTagSuggestions = this.fetchTagSuggestions.bind(this);
   }
 
   componentDidMount() {
-    this.fetchResults();
+    this.fetchResults(this.props.component);
+    this.fetchTagSuggestions();
   }
 
-  componentWillReceiveProps(nextProps) {
-    const nextSource = nextProps.component.meta.code;
-    if (this.state.markdownSource !== nextSource) {
-      this.setState({ markdownSource: nextSource });
+  handleChangeFocus(nextFocus) {
+    this.setState(() => ({ isFocused: nextFocus }));
+  }
+
+  handleUpdateMeta(metaKey, nextValue) {
+    const { updateComponents, component } = this.props;
+    if (nextValue && component.meta[metaKey] !== nextValue) {
+      const nextComponent = {
+        ...component,
+        meta: {
+          ...component.meta,
+          [metaKey]: nextValue,
+        },
+      };
+      updateComponents({ [component.id]: nextComponent });
+      this.fetchResults(nextComponent);
     }
   }
 
-  componentDidUpdate(prevProps) {
-    if (
-      this.state.editor &&
-      (prevProps.component.meta.width !== this.props.component.meta.width ||
-        prevProps.columnWidth !== this.props.columnWidth)
-    ) {
-      this.state.editor.resize(true);
-    }
-  }
-
-  setEditor(editor) {
-    editor.getSession().setUseWrapMode(true);
-    this.setState({
-      editor,
-    });
-  }
-
-  fetchResults() {
-    const url = `/tagview/tagged_objects/?tags=${
-      this.state.tags
-    }&types={this.state.tags}`;
-
-    window.fetch(url)
+  fetchResults(component) {
+    const tags = component.meta.tags || [];
+    const types = component.meta.types || TAGGED_CONTENT_TYPES;
+    const url = `/tagview/tagged_objects/?tags=${tags.join(
+      ',',
+    )}&types=${types.join(',')}`;
+    window
+      .fetch(url)
       .then(response => response.json())
       .then(data => this.setState({ data }));
   }
 
-  handleChangeFocus(nextFocus) {
-    const nextFocused = !!nextFocus;
-    const nextEditMode = nextFocused ? 'edit' : 'preview';
-    this.setState(() => ({ isFocused: nextFocused }));
-    this.handleChangeEditorMode(nextEditMode);
-  }
-
-  handleChangeEditorMode(mode) {
-    if (this.state.editorMode === 'edit') {
-      const { updateComponents, component } = this.props;
-      if (component.meta.code !== this.state.markdownSource) {
-        updateComponents({
-          [component.id]: {
-            ...component,
-            meta: {
-              ...component.meta,
-              code: this.state.markdownSource,
-            },
-          },
-        });
-      }
-    }
-
-    this.setState(() => ({
-      editorMode: mode,
-    }));
-  }
-
-  handleMarkdownChange(nextValue) {
-    this.setState({
-      markdownSource: nextValue,
+  fetchTagSuggestions() {
+    fetchSuggestions(false, suggestions => {
+      this.setState({ tagSuggestions: suggestions.map(tag => tag.name) });
     });
   }
 
@@ -167,24 +126,37 @@ class Tags extends React.PureComponent {
   }
 
   renderEditMode() {
+    const { component } = this.props;
     return (
-      <AceEditor
-        mode="markdown"
-        theme="textmate"
-        onChange={this.handleMarkdownChange}
-        width="100%"
-        height="100%"
-        showGutter={false}
-        editorProps={{ $blockScrolling: true }}
-        value={
-          // thisl allows "select all => delete" to give an empty editor
-          typeof this.state.markdownSource === 'string'
-            ? this.state.markdownSource
-            : markdownPlaceHolder
-        }
-        readOnly={false}
-        onLoad={this.setEditor}
-      />
+      <Panel style={{ height: '100%' }}>
+        <ListGroup>
+          <ListGroupItem>
+            <SelectControl
+              label={'Types'}
+              name={'types'}
+              value={component.meta.types}
+              multi
+              onChange={this.handleChangeTypes}
+              choices={[
+                ['dashboard', 'Dashboard'],
+                ['chart', 'Chart'],
+                ['query', 'Query'],
+              ]}
+            />
+          </ListGroupItem>
+          <ListGroupItem>
+            <SelectControl
+              label={'Tags'}
+              name={'tags'}
+              value={component.meta.tags}
+              multi
+              freeForm
+              onChange={this.handleChangeTags}
+              choices={this.state.tagSuggestions}
+            />
+          </ListGroupItem>
+        </ListGroup>
+      </Panel>
     );
   }
 
@@ -229,7 +201,7 @@ class Tags extends React.PureComponent {
   }
 
   render() {
-    const { isFocused, editorMode } = this.state;
+    const { isFocused } = this.state;
 
     const {
       component,
@@ -251,8 +223,6 @@ class Tags extends React.PureComponent {
         ? parentComponent.meta.width || GRID_MIN_COLUMN_COUNT
         : component.meta.width || GRID_MIN_COLUMN_COUNT;
 
-    const isEditing = editorMode === 'edit';
-
     return (
       <DragDroppable
         component={component}
@@ -267,22 +237,9 @@ class Tags extends React.PureComponent {
         {({ dropIndicatorProps, dragSourceRef }) => (
           <WithPopoverMenu
             onChangeFocus={this.handleChangeFocus}
-            menuItems={[
-              <MarkdownModeDropdown
-                id={`${component.id}-mode`}
-                value={this.state.editorMode}
-                onChange={this.handleChangeEditorMode}
-              />,
-              <DeleteComponentButton onDelete={this.handleDeleteComponent} />,
-            ]}
             editMode={editMode}
           >
-            <div
-              className={cx(
-                'dashboard-markdown',
-                isEditing && 'dashboard-markdown--editing',
-              )}
-            >
+            <div className={cx('dashboard-tags')}>
               <ResizableContainer
                 id={component.id}
                 adjustableWidth={parentComponent.type === ROW_TYPE}
@@ -305,9 +262,7 @@ class Tags extends React.PureComponent {
                   ref={dragSourceRef}
                   className="dashboard-component dashboard-component-chart-holder"
                 >
-                  {editMode && isEditing
-                    ? this.renderEditMode()
-                    : this.renderPreviewMode()}
+                  {isFocused ? this.renderEditMode() : this.renderPreviewMode()}
                 </div>
               </ResizableContainer>
             </div>
