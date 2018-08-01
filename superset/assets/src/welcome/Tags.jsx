@@ -10,11 +10,11 @@ import Loading from '../components/Loading';
 import '../../stylesheets/reactable-pagination.css';
 import { t } from '../locales';
 
-const $ = window.$ = require('jquery');
-
 const propTypes = {
   search: PropTypes.string,
 };
+
+const CSRF_TOKEN = (document.getElementById('csrf_token') || {}).value;
 
 export function fetchTags(objectType, objectId, includeTypes, callback) {
   const url = `/tagview/tags/${objectType}/${objectId}/`;
@@ -31,7 +31,7 @@ export function fetchSuggestions(includeTypes, callback) {
       json.filter(tag => tag.name.indexOf(':') === -1 || includeTypes)));
 }
 
-export function deleteTag(CSRF_TOKEN, objectType, objectId, tag, callback, error) {
+export function deleteTag(objectType, objectId, tag, callback, error) {
   const url = `/tagview/tags/${objectType}/${objectId}/`;
   window.fetch(url, {
     body: JSON.stringify([tag]),
@@ -51,7 +51,7 @@ export function deleteTag(CSRF_TOKEN, objectType, objectId, tag, callback, error
   });
 }
 
-export function addTag(CSRF_TOKEN, objectType, objectId, includeTypes, tag, callback, error) {
+export function addTag(objectType, objectId, includeTypes, tag, callback, error) {
   if (tag.indexOf(':') !== -1 && !includeTypes) {
     return;
   }
@@ -74,6 +74,18 @@ export function addTag(CSRF_TOKEN, objectType, objectId, includeTypes, tag, call
   });
 }
 
+export function fetchObjects(tags, types, callback) {
+  const url = `/tagview/tagged_objects/?tags=${tags}&types=${types}`;
+  window.fetch(url, {
+    headers: {
+      'X-CSRFToken': CSRF_TOKEN,
+    },
+    credentials: 'same-origin',
+  })
+    .then(response => response.json())
+    .then(json => callback(json));
+}
+
 export default class Tags extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -91,8 +103,7 @@ export default class Tags extends React.PureComponent {
     }
   }
   fetchResults(search) {
-    const url = `/tagview/tagged_objects/?tags=${search}`;
-    $.getJSON(url, (data) => {
+    fetchObjects(search, 'dashboard,chart,query', (data) => {
       const objects = { dashboard: [], chart: [], query: [] };
       data.forEach((object) => {
         objects[object.type].push(object);

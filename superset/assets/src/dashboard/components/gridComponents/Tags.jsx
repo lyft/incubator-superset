@@ -12,7 +12,7 @@ import ResizableContainer from '../resizable/ResizableContainer';
 import SelectControl from '../../../explore/components/controls/SelectControl';
 import WithPopoverMenu from '../menu/WithPopoverMenu';
 import { componentShape } from '../../util/propShapes';
-import { fetchSuggestions } from '../../../welcome/Tags';
+import { fetchObjects, fetchSuggestions } from '../../../welcome/Tags';
 import { ROW_TYPE, COLUMN_TYPE } from '../../util/componentTypes';
 import {
   GRID_MIN_COLUMN_COUNT,
@@ -106,13 +106,9 @@ class Tags extends React.PureComponent {
   fetchResults(component) {
     const tags = component.meta.tags || [];
     const types = component.meta.types || TAGGED_CONTENT_TYPES;
-    const url = `/tagview/tagged_objects/?tags=${tags.join(
-      ',',
-    )}&types=${types.join(',')}`;
-    window
-      .fetch(url)
-      .then(response => response.json())
-      .then(data => this.setState({ data }));
+    fetchObjects(tags.join(','), types.join(','), data =>
+      this.setState({ data }),
+    );
   }
 
   fetchTagSuggestions() {
