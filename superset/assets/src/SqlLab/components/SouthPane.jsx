@@ -20,6 +20,7 @@ const propTypes = {
   actions: PropTypes.object.isRequired,
   activeSouthPaneTab: PropTypes.string,
   height: PropTypes.number,
+  databases: PropTypes.object.isRequired,
 };
 
 const defaultProps = {
@@ -46,6 +47,7 @@ class SouthPane extends React.PureComponent {
           query={latestQuery}
           actions={props.actions}
           height={innerTabHeight}
+          database={this.props.databases[latestQuery.dbId]}
         />
       );
     } else {
@@ -97,9 +99,10 @@ class SouthPane extends React.PureComponent {
   }
 }
 
-function mapStateToProps(state) {
+function mapStateToProps({ sqlLab }) {
   return {
-    activeSouthPaneTab: state.activeSouthPaneTab,
+    activeSouthPaneTab: sqlLab.activeSouthPaneTab,
+    databases: sqlLab.databases,
   };
 }
 

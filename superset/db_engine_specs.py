@@ -71,6 +71,7 @@ class BaseEngineSpec(object):
     limit_method = LimitMethod.FORCE_LIMIT
     time_secondary_columns = False
     inner_joins = True
+    allows_subquery = True
 
     @classmethod
     def fetch_data(cls, cursor, limit):
@@ -1439,6 +1440,7 @@ class DruidEngineSpec(BaseEngineSpec):
     """Engine spec for Druid.io"""
     engine = 'druid'
     inner_joins = False
+    allows_subquery = False
 
     time_grains = (
         Grain('Time Column', _('Time Column'), '{col}', None),

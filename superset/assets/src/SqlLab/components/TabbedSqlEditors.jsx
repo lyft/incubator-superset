@@ -41,7 +41,8 @@ class TabbedSqlEditors extends React.PureComponent {
   }
   componentDidMount() {
     const query = URI(window.location).search(true);
-    if (query.id || query.sql || query.savedQueryId) {
+    // Popping a new tab based on the querystring
+    if (query.id || query.sql || query.savedQueryId || query.datasourceKey) {
       if (query.id) {
         this.props.actions.popStoredQuery(query.id);
       } else if (query.savedQueryId) {
