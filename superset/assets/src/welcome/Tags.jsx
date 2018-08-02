@@ -86,7 +86,7 @@ export function fetchObjects(tags, types, callback) {
     .then(json => callback(json));
 }
 
-export default class Tags extends React.PureComponent {
+export class Tags extends React.PureComponent {
   constructor(props) {
     super(props);
     this.state = {
