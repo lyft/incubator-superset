@@ -7,7 +7,10 @@ import moment from 'moment';
 import { unsafe } from 'reactable';
 import 'whatwg-fetch';
 
+import DeleteComponentButton from '../DeleteComponentButton';
 import DragDroppable from '../dnd/DragDroppable';
+import HoverMenu from '../menu/HoverMenu';
+import IconButton from '../IconButton';
 import ResizableContainer from '../resizable/ResizableContainer';
 import SelectControl from '../../../explore/components/controls/SelectControl';
 import WithPopoverMenu from '../menu/WithPopoverMenu';
@@ -65,12 +68,14 @@ class Tags extends React.PureComponent {
     super(props);
     this.state = {
       isFocused: false,
+      isConfiguring: false,
       data: [],
       tagSuggestions: STANDARD_TAGS,
     };
 
     this.handleChangeFocus = this.handleChangeFocus.bind(this);
     this.handleDeleteComponent = this.handleDeleteComponent.bind(this);
+    this.toggleConfiguring = this.toggleConfiguring.bind(this);
     this.handleUpdateMeta = this.handleUpdateMeta.bind(this);
     this.handleChangeTags = this.handleUpdateMeta.bind(this, 'tags');
     this.handleChangeTypes = this.handleUpdateMeta.bind(this, 'types');
@@ -123,6 +128,10 @@ class Tags extends React.PureComponent {
   handleDeleteComponent() {
     const { deleteComponent, id, parentId } = this.props;
     deleteComponent(id, parentId);
+  }
+
+  toggleConfiguring() {
+    this.setState({ isConfiguring: !this.state.isConfiguring });
   }
 
   renderEditMode() {
@@ -201,7 +210,7 @@ class Tags extends React.PureComponent {
   }
 
   render() {
-    const { isFocused } = this.state;
+    const { isFocused, isConfiguring } = this.state;
 
     const {
       component,
@@ -222,6 +231,8 @@ class Tags extends React.PureComponent {
       parentComponent.type === COLUMN_TYPE
         ? parentComponent.meta.width || GRID_MIN_COLUMN_COUNT
         : component.meta.width || GRID_MIN_COLUMN_COUNT;
+
+    const buttonClass = isConfiguring ? 'fa fa-table' : 'fa fa-cog';
 
     return (
       <DragDroppable
@@ -262,7 +273,20 @@ class Tags extends React.PureComponent {
                   ref={dragSourceRef}
                   className="dashboard-component dashboard-component-chart-holder"
                 >
-                  {isFocused ? this.renderEditMode() : this.renderPreviewMode()}
+                  {isConfiguring
+                    ? this.renderEditMode()
+                    : this.renderPreviewMode()}
+                  {editMode && (
+                    <HoverMenu position="top">
+                      <IconButton
+                        className={buttonClass}
+                        onClick={this.toggleConfiguring}
+                      />
+                      <DeleteComponentButton
+                        onDelete={this.handleDeleteComponent}
+                      />
+                    </HoverMenu>
+                  )}
                 </div>
               </ResizableContainer>
             </div>
