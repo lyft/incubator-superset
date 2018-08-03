@@ -1,7 +1,7 @@
 // Ids
-export const DASHBOARD_GRID_ID = 'DASHBOARD_GRID_ID';
-export const DASHBOARD_HEADER_ID = 'DASHBOARD_HEADER_ID';
-export const DASHBOARD_ROOT_ID = 'DASHBOARD_ROOT_ID';
+export const DASHBOARD_GRID_ID = 'GRID_ID';
+export const DASHBOARD_HEADER_ID = 'HEADER_ID';
+export const DASHBOARD_ROOT_ID = 'ROOT_ID';
 export const DASHBOARD_VERSION_KEY = 'DASHBOARD_VERSION_KEY';
 
 export const NEW_COMPONENTS_SOURCE_ID = 'NEW_COMPONENTS_SOURCE_ID';
@@ -24,6 +24,7 @@ export const GRID_MIN_COLUMN_COUNT = 1;
 export const GRID_MIN_ROW_UNITS = 5;
 export const GRID_MAX_ROW_UNITS = 100;
 export const GRID_MIN_ROW_HEIGHT = GRID_GUTTER_SIZE;
+export const GRID_DEFAULT_CHART_WIDTH = 4;
 
 // Header types
 export const SMALL_HEADER = 'SMALL_HEADER';
@@ -41,9 +42,14 @@ export const UNDO_LIMIT = 50;
 export const SAVE_TYPE_OVERWRITE = 'overwrite';
 export const SAVE_TYPE_NEWDASHBOARD = 'newDashboard';
 
-// objects that can be tagged
+// tagging system
 export const TAGGED_CONTENT_TYPES = ['dashboard', 'chart', 'query'];
 export const STANDARD_TAGS = [
   ['owner:{{ current_user_id() }}', 'Owned by me'],
   ['favorited_by:{{ current_user_id() }}', 'Favorited by me'],
 ];
+
+// default dashboard layout data size limit
+// could be overwritten by server-side config
+export const DASHBOARD_POSITION_DATA_LIMIT = 65535;
+

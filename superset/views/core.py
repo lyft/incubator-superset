@@ -52,7 +52,8 @@ from superset.utils import (
 from .base import (
     api, BaseSupersetView, CsvResponse, DeleteMixin,
     generate_download_headers, get_error_msg, get_user_roles,
-    json_error_response, SupersetFilter, SupersetModelView, YamlExportMixin,
+    json_error_response, json_success, SupersetFilter, SupersetModelView,
+    YamlExportMixin,
 )
 from .utils import bootstrap_user_data
 
@@ -68,7 +69,6 @@ DATASOURCE_MISSING_ERR = __('The datasource seems to have been deleted')
 ACCESS_REQUEST_MISSING_ERR = __(
     'The access requests seem to have been deleted')
 USER_MISSING_ERR = __('The user seems to have been deleted')
-DATASOURCE_ACCESS_ERR = __("You don't have access to this datasource")
 
 FORM_DATA_KEY_BLACKLIST = []
 if not config.get('ENABLE_JAVASCRIPT_CONTROLS'):
@@ -87,10 +87,6 @@ def get_database_access_error_msg(database_name):
 def get_datasource_access_error_msg(datasource_name):
     return __('This endpoint requires the datasource %(name)s, database or '
               '`all_datasource_access` permission', name=datasource_name)
-
-
-def json_success(json_msg, status=200):
-    return Response(json_msg, status=status, mimetype='application/json')
 
 
 def is_owner(obj, user):
@@ -327,6 +323,7 @@ class DatabaseAsync(DatabaseView):
         'expose_in_sqllab', 'allow_ctas', 'force_ctas_schema',
         'allow_run_async', 'allow_run_sync', 'allow_dml',
         'allow_multi_schema_metadata_fetch', 'allow_csv_upload',
+        'allows_subquery',
     ]
 
 
@@ -420,6 +417,7 @@ if config.get('ENABLE_ACCESS_REQUEST'):
 
 
 class SliceModelView(SupersetModelView, DeleteMixin):  # noqa
+    route_base = '/chart'
     datamodel = SQLAInterface(models.Slice)
 
     list_title = _('List Charts')
@@ -509,6 +507,7 @@ appbuilder.add_view(
 
 
 class SliceAsync(SliceModelView):  # noqa
+    route_base = '/sliceasync'
     list_columns = [
         'id', 'slice_link', 'viz_type', 'slice_name',
         'creator', 'modified', 'icons']
@@ -522,6 +521,7 @@ appbuilder.add_view_no_menu(SliceAsync)
 
 
 class SliceAddView(SliceModelView):  # noqa
+    route_base = '/sliceaddview'
     list_columns = [
         'id', 'slice_name', 'slice_url', 'edit_url', 'viz_type', 'params',
         'description', 'description_markeddown', 'datasource_id', 'datasource_type',
@@ -533,6 +533,7 @@ appbuilder.add_view_no_menu(SliceAddView)
 
 
 class DashboardModelView(SupersetModelView, DeleteMixin):  # noqa
+    route_base = '/dashboard'
     datamodel = SQLAInterface(models.Dashboard)
 
     list_title = _('List Dashboards')
@@ -608,7 +609,7 @@ class DashboardModelView(SupersetModelView, DeleteMixin):  # noqa
             items = [items]
         ids = ''.join('&id={}'.format(d.id) for d in items)
         return redirect(
-            '/dashboardmodelview/export_dashboards_form?{}'.format(ids[1:]))
+            '/dashboard/export_dashboards_form?{}'.format(ids[1:]))
 
     @expose('/export_dashboards_form')
     def download_dashboards(self):
@@ -620,7 +621,7 @@ class DashboardModelView(SupersetModelView, DeleteMixin):  # noqa
                 mimetype='application/text')
         return self.render_template(
             'superset/export_dashboards.html',
-            dashboards_url='/dashboardmodelview/list',
+            dashboards_url='/dashboard/list',
         )
 
 
@@ -634,6 +635,7 @@ appbuilder.add_view(
 
 
 class DashboardModelViewAsync(DashboardModelView):  # noqa
+    route_base = '/dashboardasync'
     list_columns = [
         'id', 'dashboard_link', 'creator', 'modified', 'dashboard_title',
         'changed_on', 'url', 'changed_by_name',
@@ -650,6 +652,7 @@ appbuilder.add_view_no_menu(DashboardModelViewAsync)
 
 
 class DashboardAddView(DashboardModelView):  # noqa
+    route_base = '/dashboardaddview'
     list_columns = [
         'id', 'dashboard_link', 'creator', 'modified', 'dashboard_title',
         'changed_on', 'url', 'changed_by_name',
@@ -1011,6 +1014,8 @@ class Superset(BaseSupersetView):
             slice_form_data.update(form_data)
             form_data = slice_form_data
 
+        update_time_range(form_data)
+
         return form_data, slc
 
     def get_viz(
@@ -1094,8 +1099,9 @@ class Superset(BaseSupersetView):
 
         if not security_manager.datasource_access(viz_obj.datasource, g.user):
             return json_error_response(
-                DATASOURCE_ACCESS_ERR, status=404, link=config.get(
-                    'PERMISSION_INSTRUCTIONS_LINK'))
+                security_manager.get_datasource_access_error_msg(viz_obj.datasource),
+                status=404,
+                link=security_manager.get_datasource_access_link(viz_obj.datasource))
 
         if csv:
             return CsvResponse(
@@ -1209,7 +1215,7 @@ class Superset(BaseSupersetView):
                 models.Dashboard.import_obj(
                     dashboard, import_time=current_tt)
             db.session.commit()
-            return redirect('/dashboardmodelview/list/')
+            return redirect('/dashboard/list/')
         return self.render_template('superset/import_dashboards.html')
 
     @log_this
@@ -1253,16 +1259,18 @@ class Superset(BaseSupersetView):
         datasource_id, datasource_type = self.datasource_info(
             datasource_id, datasource_type, form_data)
 
-        error_redirect = '/slicemodelview/list/'
+        error_redirect = '/chart/list/'
         datasource = ConnectorRegistry.get_datasource(
             datasource_type, datasource_id, db.session)
         if not datasource:
             flash(DATASOURCE_MISSING_ERR, 'danger')
             return redirect(error_redirect)
 
-        if not security_manager.datasource_access(datasource):
+        if config.get('ENABLE_ACCESS_REQUEST') and (
+            not security_manager.datasource_access(datasource)
+        ):
             flash(
-                __(get_datasource_access_error_msg(datasource.name)),
+                __(security_manager.get_datasource_access_error_msg(datasource)),
                 'danger')
             return redirect(
                 'superset/request_access/?'
@@ -1282,8 +1290,8 @@ class Superset(BaseSupersetView):
 
         form_data['datasource'] = str(datasource_id) + '__' + datasource_type
 
-        # On explore, merge extra filters into the form data
-        utils.split_adhoc_filters_into_base_filters(form_data)
+        # On explore, merge legacy and extra filters into the form data
+        utils.convert_legacy_filters_into_adhoc(form_data)
         merge_extra_filters(form_data)
 
         # merge request url params
@@ -1312,10 +1320,6 @@ class Superset(BaseSupersetView):
                 datasource_id,
                 datasource_type,
                 datasource.name)
-
-        # update to new time filter
-        if 'since' in form_data and 'until' in form_data:
-            form_data = update_time_range(form_data)
 
         standalone = request.args.get('standalone') == 'true'
         bootstrap_data = {
@@ -1364,7 +1368,8 @@ class Superset(BaseSupersetView):
         if not datasource:
             return json_error_response(DATASOURCE_MISSING_ERR)
         if not security_manager.datasource_access(datasource):
-            return json_error_response(DATASOURCE_ACCESS_ERR)
+            return json_error_response(
+                security_manager.get_datasource_access_error_msg(datasource))
 
         payload = json.dumps(
             datasource.values_for_column(
@@ -1643,7 +1648,10 @@ class Superset(BaseSupersetView):
                 session.merge(slc)
                 session.flush()
 
-        dashboard.position_json = json.dumps(positions, indent=4, sort_keys=True)
+        # remove leading and trailing white spaces in the dumped json
+        dashboard.position_json = json.dumps(
+            positions, indent=None, separators=(',', ':'), sort_keys=True)
+        dashboard.position_json = json.dumps(positions, sort_keys=True)
         md = dashboard.params_dict
         dashboard.css = data.get('css')
         dashboard.dashboard_title = data['dashboard_title']
@@ -1660,7 +1668,7 @@ class Superset(BaseSupersetView):
             {key: v for key, v in default_filters_data.items()
              if int(key) in slice_ids}
         md['default_filters'] = json.dumps(applicable_filters)
-        dashboard.json_metadata = json.dumps(md, indent=4)
+        dashboard.json_metadata = json.dumps(md)
 
     @api
     @has_access_api
@@ -2086,7 +2094,7 @@ class Superset(BaseSupersetView):
             for datasource in datasources:
                 if datasource and not security_manager.datasource_access(datasource):
                     flash(
-                        __(get_datasource_access_error_msg(datasource.name)),
+                        __(security_manager.get_datasource_access_error_msg(datasource)),
                         'danger')
                     return redirect(
                         'superset/request_access/?'
@@ -2204,7 +2212,6 @@ class Superset(BaseSupersetView):
         SqlaTable = ConnectorRegistry.sources['table']
         data = json.loads(request.form.get('data'))
         table_name = data.get('datasourceName')
-        template_params = data.get('templateParams')
         table = (
             db.session.query(SqlaTable)
             .filter_by(table_name=table_name)
@@ -2220,43 +2227,24 @@ class Superset(BaseSupersetView):
         table.sql = q.stripped()
         db.session.add(table)
         cols = []
-        dims = []
-        metrics = []
-        for column_name, config in data.get('columns').items():
-            is_dim = config.get('is_dim', False)
+        for config in data.get('columns'):
+            column_name = config.get('name')
             SqlaTable = ConnectorRegistry.sources['table']
             TableColumn = SqlaTable.column_class
             SqlMetric = SqlaTable.metric_class
             col = TableColumn(
                 column_name=column_name,
-                filterable=is_dim,
-                groupby=is_dim,
+                filterable=True,
+                groupby=True,
                 is_dttm=config.get('is_date', False),
                 type=config.get('type', False),
             )
             cols.append(col)
-            if is_dim:
-                dims.append(col)
-            agg = config.get('agg')
-            if agg:
-                if agg == 'count_distinct':
-                    metrics.append(SqlMetric(
-                        metric_name='{agg}__{column_name}'.format(**locals()),
-                        expression='COUNT(DISTINCT {column_name})'
-                        .format(**locals()),
-                    ))
-                else:
-                    metrics.append(SqlMetric(
-                        metric_name='{agg}__{column_name}'.format(**locals()),
-                        expression='{agg}({column_name})'.format(**locals()),
-                    ))
-        if not metrics:
-            metrics.append(SqlMetric(
-                metric_name='count'.format(**locals()),
-                expression='count(*)'.format(**locals()),
-            ))
+
         table.columns = cols
-        table.metrics = metrics
+        table.metrics = [
+            SqlMetric(metric_name='count', expression='count(*)'),
+        ]
         db.session.commit()
         return self.json_response(json.dumps({
             'table_id': table.id,
@@ -2384,7 +2372,7 @@ class Superset(BaseSupersetView):
         rejected_tables = security_manager.rejected_datasources(
             query.sql, query.database, query.schema)
         if rejected_tables:
-            return json_error_response(get_datasource_access_error_msg(
+            return json_error_response(security_manager.get_table_access_error_msg(
                 '{}'.format(rejected_tables)))
 
         return json_success(utils.zlib_decompress_to_string(blob))
@@ -2426,8 +2414,9 @@ class Superset(BaseSupersetView):
 
         rejected_tables = security_manager.rejected_datasources(sql, mydb, schema)
         if rejected_tables:
-            return json_error_response(get_datasource_access_error_msg(
-                '{}'.format(rejected_tables)))
+            return json_error_response(
+                security_manager.get_table_access_error_msg(rejected_tables),
+                link=security_manager.get_table_access_link(rejected_tables))
         session.commit()
 
         select_as_cta = request.form.get('select_as_cta') == 'true'
@@ -2540,7 +2529,8 @@ class Superset(BaseSupersetView):
         rejected_tables = security_manager.rejected_datasources(
             query.sql, query.database, query.schema)
         if rejected_tables:
-            flash(get_datasource_access_error_msg('{}'.format(rejected_tables)))
+            flash(
+                security_manager.get_table_access_error_msg('{}'.format(rejected_tables)))
             return redirect('/')
         blob = None
         if results_backend and query.results_key:
@@ -2582,7 +2572,9 @@ class Superset(BaseSupersetView):
 
         # Check permission for datasource
         if not security_manager.datasource_access(datasource):
-            return json_error_response(DATASOURCE_ACCESS_ERR)
+            return json_error_response(
+                security_manager.get_datasource_access_error_msg(datasource),
+                link=security_manager.get_datasource_access_link(datasource))
         return json_success(json.dumps(datasource.data))
 
     @expose('/queries/<last_updated_ms>')
@@ -2760,8 +2752,9 @@ class Superset(BaseSupersetView):
         viz_obj = self.get_viz(slice_id)
         if not security_manager.datasource_access(viz_obj.datasource):
             return json_error_response(
-                DATASOURCE_ACCESS_ERR, status=401, link=config.get(
-                    'PERMISSION_INSTRUCTIONS_LINK'))
+                security_manager.get_datasource_access_error_msg(viz_obj.datasource),
+                status=401,
+                link=security_manager.get_datasource_access_link(viz_obj.datasource))
         return self.get_query_string_response(viz_obj)
 
 

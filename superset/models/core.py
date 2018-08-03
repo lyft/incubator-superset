@@ -37,6 +37,7 @@ import sqlparse
 
 from superset import app, db, db_engine_specs, security_manager, utils
 from superset.connectors.connector_registry import ConnectorRegistry
+from superset.legacy import update_time_range
 from superset.models.helpers import AuditMixinNullable, ImportMixin, set_perm
 from superset.models.tags import ChartUpdater, DashboardUpdater, FavStarUpdater
 from superset.viz import viz_types
@@ -214,8 +215,10 @@ class Slice(Model, AuditMixinNullable, ImportMixin):
             'datasource': '{}__{}'.format(
                 self.datasource_id, self.datasource_type),
         })
+
         if self.cache_timeout:
             form_data['cache_timeout'] = self.cache_timeout
+        update_time_range(form_data)
         return form_data
 
     def get_explore_url(self, base_url='/superset/explore', overrides=None):
@@ -238,7 +241,7 @@ class Slice(Model, AuditMixinNullable, ImportMixin):
 
     @property
     def edit_url(self):
-        return '/slicemodelview/edit/{}'.format(self.id)
+        return '/chart/edit/{}'.format(self.id)
 
     @property
     def slice_link(self):
@@ -632,6 +635,10 @@ class Database(Model, AuditMixinNullable, ImportMixin):
         return self.verbose_name if self.verbose_name else self.database_name
 
     @property
+    def allows_subquery(self):
+        return self.db_engine_spec.allows_subquery
+
+    @property
     def data(self):
         return {
             'id': self.id,
@@ -639,6 +646,7 @@ class Database(Model, AuditMixinNullable, ImportMixin):
             'backend': self.backend,
             'allow_multi_schema_metadata_fetch':
                 self.allow_multi_schema_metadata_fetch,
+            'allows_subquery': self.allows_subquery,
         }
 
     @property
@@ -734,7 +742,7 @@ class Database(Model, AuditMixinNullable, ImportMixin):
         return self.get_dialect().identifier_preparer.quote
 
     def get_df(self, sql, schema):
-        sqls = [str(s).strip().strip(';') for s in sqlparse.parse(sql)]
+        sqls = [six.text_type(s).strip().strip(';') for s in sqlparse.parse(sql)]
         engine = self.get_sqla_engine(schema=schema)
 
         def needs_conversion(df_series):
@@ -746,8 +754,12 @@ class Database(Model, AuditMixinNullable, ImportMixin):
 
         with closing(engine.raw_connection()) as conn:
             with closing(conn.cursor()) as cursor:
-                for sql in sqls:
+                for sql in sqls[:-1]:
                     self.db_engine_spec.execute(cursor, sql)
+                    cursor.fetchall()
+
+                self.db_engine_spec.execute(cursor, sqls[-1])
+
                 df = pd.DataFrame.from_records(
                     data=list(cursor.fetchall()),
                     columns=[col_desc[0] for col_desc in cursor.description],
@@ -840,7 +852,7 @@ class Database(Model, AuditMixinNullable, ImportMixin):
         each database has slightly different but similar datetime functions,
         this allows a mapping between database engines and actual functions.
         """
-        return self.db_engine_spec.time_grains
+        return self.db_engine_spec.get_time_grains()
 
     def grains_dict(self):
         """Allowing to lookup grain by either label or duration
