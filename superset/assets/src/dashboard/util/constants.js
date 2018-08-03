@@ -52,4 +52,3 @@ export const STANDARD_TAGS = [
 // default dashboard layout data size limit
 // could be overwritten by server-side config
 export const DASHBOARD_POSITION_DATA_LIMIT = 65535;
-

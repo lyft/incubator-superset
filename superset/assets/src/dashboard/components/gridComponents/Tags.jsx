@@ -15,7 +15,7 @@ import ResizableContainer from '../resizable/ResizableContainer';
 import SelectControl from '../../../explore/components/controls/SelectControl';
 import WithPopoverMenu from '../menu/WithPopoverMenu';
 import { componentShape } from '../../util/propShapes';
-import { fetchObjects, fetchSuggestions } from '../../../welcome/Tags';
+import { fetchObjects, fetchSuggestions } from '../../../tags';
 import { ROW_TYPE, COLUMN_TYPE } from '../../util/componentTypes';
 import {
   GRID_MIN_COLUMN_COUNT,
