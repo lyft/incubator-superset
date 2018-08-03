@@ -25,6 +25,8 @@ import {
   TAGGED_CONTENT_TYPES,
 } from '../../util/constants';
 
+const HEADER_HEIGHT = 48;
+
 const propTypes = {
   id: PropTypes.string.isRequired,
   parentId: PropTypes.string.isRequired,
@@ -170,9 +172,12 @@ class Tags extends React.PureComponent {
   }
 
   renderPreviewMode() {
+    const component = this.props.component;
+    const height = component.meta.height * GRID_BASE_UNIT - HEADER_HEIGHT;
     return (
       <BootstrapTable
         data={this.state.data}
+        height={height}
         bordered={false}
         scrollTop={'Top'}
         tableHeaderClass="tag-header-class"
@@ -192,11 +197,11 @@ class Tags extends React.PureComponent {
         >
           Name
         </TableHeaderColumn>
-        <TableHeaderColumn dataField="creator" dataFormat={unsafe} dataSort>
-          Creator
-        </TableHeaderColumn>
         <TableHeaderColumn dataField="type" dataSort>
           Type
+        </TableHeaderColumn>
+        <TableHeaderColumn dataField="creator" dataFormat={unsafe} dataSort>
+          Creator
         </TableHeaderColumn>
         <TableHeaderColumn
           dataField="changed_on"
