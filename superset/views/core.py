@@ -2360,6 +2360,9 @@ class Superset(BaseSupersetView):
     @expose('/sql_json/', methods=['POST', 'GET'])
     @log_this
     def sql_json(self):
+        return self.sql_json_call(request)
+
+    def sql_json_call(self, request):
         """Runs arbitrary sql and returns and json"""
         async = request.form.get('runAsync') == 'true'
         sql = request.form.get('sql')
@@ -2400,7 +2403,7 @@ class Superset(BaseSupersetView):
             status=QueryStatus.PENDING if async else QueryStatus.RUNNING,
             sql_editor_id=request.form.get('sql_editor_id'),
             tmp_table_name=tmp_table_name,
-            user_id=int(g.user.get_id()),
+            user_id=int(g.user.get_id()) if g.user and g.user.get_id() else None,
             client_id=request.form.get('client_id'),
         )
         session.add(query)
