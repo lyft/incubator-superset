@@ -113,13 +113,13 @@ class Tags extends React.PureComponent {
   fetchResults(component) {
     const tags = component.meta.tags || [];
     const types = component.meta.types || TAGGED_CONTENT_TYPES;
-    fetchObjects(tags.join(','), types.join(','), data =>
+    fetchObjects({ tags: tags.join(','), types: types.join(',') }, data =>
       this.setState({ data }),
     );
   }
 
   fetchTagSuggestions() {
-    fetchSuggestions(false, suggestions => {
+    fetchSuggestions({ includeTypes: false }, suggestions => {
       const tagSuggestions = STANDARD_TAGS.concat(
         suggestions.map(tag => tag.name),
       );
