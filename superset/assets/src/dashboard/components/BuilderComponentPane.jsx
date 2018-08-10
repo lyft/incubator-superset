@@ -26,7 +26,7 @@ import InsertComponentPane, {
   SUPERSET_HEADER_HEIGHT,
 } from './InsertComponentPane';
 import ColorComponentPane from './ColorComponentPane';
-import { BUILDER_PANE_TYPE } from '../util/constants';
+import SliceAdder from '../containers/SliceAdder';
 
 const propTypes = {
   topOffset: PropTypes.number,
