@@ -107,6 +107,7 @@
     "react-split-pane": "^0.1.66",
     "react-sticky": "^6.0.2",
     "react-syntax-highlighter": "^7.0.4",
+    "react-tag-autocomplete": "^5.5.1",
     "react-virtualized": "9.19.1",
     "react-virtualized-select": "^2.4.0",
     "reactable": "1.0.2",
@@ -120,7 +121,8 @@
     "supercluster": "https://github.com/georgeke/supercluster/tarball/ac3492737e7ce98e07af679623aad452373bbc40",
     "underscore": "^1.8.3",
     "urijs": "^1.18.10",
-    "viewport-mercator-project": "^5.0.0"
+    "viewport-mercator-project": "^5.0.0",
+    "whatwg-fetch": "^2.0.4"
   },
   "devDependencies": {
     "babel-cli": "^6.14.0",
