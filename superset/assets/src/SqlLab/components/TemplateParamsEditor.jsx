@@ -82,8 +82,9 @@ export default class TemplateParamsEditor extends React.Component {
         Assign a set of parameters as <code>JSON</code> below
         (example: <code>{'{"my_table": "foo"}'}</code>),
         and they become available
-        in your SQL (example: <code>SELECT * FROM {'{{ my_table }}'} </code>)
-        by using&nbsp;
+        in your SQL (example: <code>SELECT * FROM {'{{ my_table }}'}</code>)
+        by using
+        {' '}
         <a
           href="https://superset.apache.org/sqllab.html#templating-with-jinja"
           target="_blank"
