@@ -48,6 +48,7 @@ from .base import (
     CsvResponse, data_payload_response, DeleteMixin, generate_download_headers,
     get_error_msg, handle_api_exception, json_error_response, json_success,
     SupersetFilter, SupersetModelView, YamlExportMixin,
+    YamlExportMixin,
 )
 from .utils import bootstrap_user_data
 
@@ -77,6 +78,11 @@ if not config.get('ENABLE_JAVASCRIPT_CONTROLS'):
 def get_database_access_error_msg(database_name):
     return __('This view requires the database %(name)s or '
               '`all_datasource_access` permission', name=database_name)
+
+
+def get_datasource_access_error_msg(datasource_name):
+    return __('This endpoint requires the datasource %(name)s, database or '
+              '`all_datasource_access` permission', name=datasource_name)
 
 
 def is_owner(obj, user):
