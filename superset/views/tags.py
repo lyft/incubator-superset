@@ -57,33 +57,6 @@ def process_template(content):
     return template.render(context)
 
 
-def get_name(obj):
-    if obj.Dashboard:
-        return obj.Dashboard.dashboard_title
-    elif obj.Slice:
-        return obj.Slice.slice_name
-    elif obj.SavedQuery:
-        return obj.SavedQuery.label
-
-
-def get_creator(obj):
-    if obj.Dashboard:
-        return obj.Dashboard.creator()
-    elif obj.Slice:
-        return obj.Slice.creator()
-    elif obj.SavedQuery:
-        return obj.SavedQuery.creator()
-
-
-def get_attribute(obj, attr):
-    if obj.Dashboard:
-        return getattr(obj.Dashboard, attr)
-    elif obj.Slice:
-        return getattr(obj.Slice, attr)
-    elif obj.SavedQuery:
-        return getattr(obj.SavedQuery, attr)
-
-
 class TagView(BaseSupersetView):
 
     @has_access_api
@@ -91,11 +64,12 @@ class TagView(BaseSupersetView):
     def suggestions(self):
         query = (
             db.session.query(TaggedObject)
-            .group_by(TaggedObject.tag_id)
+            .with_entities(TaggedObject.tag_id, Tag.name)
+            .group_by(TaggedObject.tag_id, Tag.name)
             .order_by(func.count().desc())
             .all()
         )
-        tags = [{'id': obj.tag.id, 'name': obj.tag.name} for obj in query]
+        tags = [{'id': id, 'name': name} for id, name in query]
         return json_success(json.dumps(tags))
 
     @has_access_api
@@ -157,60 +131,113 @@ class TagView(BaseSupersetView):
     @has_access_api
     @expose('/tagged_objects/', methods=['GET', 'POST'])
     def tagged_objects(self):
+        """
         query = db.session.query(
             TaggedObject,
             superset.models.core.Dashboard,
             superset.models.core.Slice,
             SavedQuery,
         ).join(Tag)
+        """
 
-        tags = request.args.get('tags')
+        tags = [
+            process_template(tag)
+            for tag in request.args.get('tags', '').split(',') if tag
+        ]
         if not tags:
             return json_success(json.dumps([]))
 
-        tags = [process_template(tag) for tag in tags.split(',')]
-        query = query.filter(Tag.name.in_(tags))
-
         # filter types
-        types = request.args.get('types')
-        if types:
-            query = query.filter(TaggedObject.object_type.in_(types.split(',')))
+        types = [
+            type_
+            for type_ in request.args.get('types', '').split(',')
+            if type_
+        ]
 
-        # get names
-        query = query.outerjoin(
+        results = []
+
+        # dashboards
+        query = (
+            db.session
+            .query(TaggedObject, superset.models.core.Dashboard)
+            .join(Tag)
+            .filter(Tag.name.in_(tags)))
+        if types:
+            query = query.filter(TaggedObject.object_type.in_(types))
+        dashboards = query.outerjoin(
             superset.models.core.Dashboard,
             and_(
                 TaggedObject.object_id == superset.models.core.Dashboard.id,
                 TaggedObject.object_type == ObjectTypes.dashboard,
             ),
-        ).outerjoin(
+        ).all()
+        results.extend(
+            {
+                'id': obj.Dashboard.id,
+                'type': obj.TaggedObject.object_type.name,
+                'name': obj.Dashboard.dashboard_title,
+                'url': obj.Dashboard.url,
+                'changed_on': obj.Dashboard.changed_on,
+                'created_by': obj.Dashboard.created_by_fk,
+                'creator': obj.Dashboard.creator(),
+            } for obj in dashboards if obj.Dashboard
+        )
+
+        # charts
+        query = (
+            db.session
+            .query(TaggedObject, superset.models.core.Slice)
+            .join(Tag)
+            .filter(Tag.name.in_(tags)))
+        if types:
+            query = query.filter(TaggedObject.object_type.in_(types))
+        charts = query.outerjoin(
             superset.models.core.Slice,
             and_(
                 TaggedObject.object_id == superset.models.core.Slice.id,
                 TaggedObject.object_type == ObjectTypes.chart,
             ),
-        ).outerjoin(
+        ).all()
+        results.extend(
+            {
+                'id': obj.Slice.id,
+                'type': obj.TaggedObject.object_type.name,
+                'name': obj.Slice.slice_name,
+                'url': obj.Slice.url,
+                'changed_on': obj.Slice.changed_on,
+                'created_by': obj.Slice.created_by_fk,
+                'creator': obj.Slice.creator(),
+            } for obj in charts if obj.Slice
+        )
+
+        # saved queries
+        query = (
+            db.session
+            .query(TaggedObject, SavedQuery)
+            .join(Tag)
+            .filter(Tag.name.in_(tags)))
+        if types:
+            query = query.filter(TaggedObject.object_type.in_(types))
+        saved_queries = query.outerjoin(
             SavedQuery,
             and_(
                 TaggedObject.object_id == SavedQuery.id,
                 TaggedObject.object_type == ObjectTypes.query,
             ),
-        ).group_by(TaggedObject.object_id, TaggedObject.object_type)
-
-        objects = [
+        ).all()
+        results.extend(
             {
-                'id': get_attribute(obj, 'id'),
+                'id': obj.SavedQuery.id,
                 'type': obj.TaggedObject.object_type.name,
-                'name': get_name(obj),
-                'url': get_attribute(obj, 'url'),
-                'changed_on': get_attribute(obj, 'changed_on'),
-                'created_by': get_attribute(obj, 'created_by_fk'),
-                'creator': get_creator(obj),
-            }
-            for obj in query if get_attribute(obj, 'id')
-        ]
+                'name': obj.SavedQuery.label,
+                'url': obj.SavedQuery.url,
+                'changed_on': obj.SavedQuery.changed_on,
+                'created_by': obj.SavedQuery.created_by_fk,
+                'creator': obj.SavedQuery.creator(),
+            } for obj in saved_queries if obj.SavedQuery
+        )
 
-        return json_success(json.dumps(objects, default=utils.core.json_int_dttm_ser))
+        return json_success(json.dumps(results, default=utils.core.json_int_dttm_ser))
 
 
 app.url_map.converters['object_type'] = ObjectTypeConverter
