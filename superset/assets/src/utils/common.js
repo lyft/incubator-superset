@@ -1,6 +1,8 @@
 /* eslint global-require: 0 */
 import { SupersetClient } from '@superset-ui/core';
 import { t } from '../locales';
+import $ from 'jquery';
+import URI from 'urijs';
 
 const d3 = require('d3');
 
@@ -70,11 +72,9 @@ export function getShortUrl(longUrl) {
 }
 
 export function supersetURL(rootUrl, getParams = {}) {
-  const url = new URL(rootUrl, window.location.origin);
-  for (const k in getParams) {
-    url.searchParams.set(k, getParams[k]);
-  }
-  return url.href;
+  const parsedUrl = new URI(rootUrl).absoluteTo(window.location.origin);
+  parsedUrl.search(getParams);
+  return parsedUrl.href();
 }
 
 export function isTruthy(obj) {
