@@ -14,13 +14,25 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import lyft # noqa
-from . import base  # noqa
-from . import api # noqa
-from . import core  # noqa
-from . import sql_lab  # noqa
-from . import dashboard # noqa
-from . import annotations # noqa
-from . import datasource # noqa
-from . import schedules # noqa
-from . import tags  # noqa
+"""empty message
+
+Revision ID: 179ef0f46016
+Revises: ('1a1d627ebd8e', '05cddfb1eea3')
+Create Date: 2018-08-22 21:41:21.478678
+
+"""
+
+# revision identifiers, used by Alembic.
+revision = '179ef0f46016'
+down_revision = ('1a1d627ebd8e', '05cddfb1eea3')
+
+from alembic import op
+import sqlalchemy as sa
+
+
+def upgrade():
+    pass
+
+
+def downgrade():
+    pass
