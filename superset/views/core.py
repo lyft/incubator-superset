@@ -55,7 +55,8 @@ from .base import (
     check_ownership,
     CsvResponse, DeleteMixin,
     generate_download_headers, get_error_msg,
-    json_error_response, SupersetFilter, SupersetModelView, YamlExportMixin,
+    json_error_response, json_success, SupersetFilter, SupersetModelView,
+    YamlExportMixin,
 )
 from .utils import bootstrap_user_data
 
@@ -86,8 +87,9 @@ def get_database_access_error_msg(database_name):
               '`all_datasource_access` permission', name=database_name)
 
 
-def json_success(json_msg, status=200):
-    return Response(json_msg, status=status, mimetype='application/json')
+def get_datasource_access_error_msg(datasource_name):
+    return __('This endpoint requires the datasource %(name)s, database or '
+              '`all_datasource_access` permission', name=datasource_name)
 
 
 def is_owner(obj, user):
