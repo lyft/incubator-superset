@@ -16,8 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/* eslint global-require: 0 */
 import { SupersetClient } from '@superset-ui/connection';
+import URI from 'urijs';
 import getClientErrorObject from './getClientErrorObject';
+
+export const LUMINANCE_RED_WEIGHT = 0.2126;
+export const LUMINANCE_GREEN_WEIGHT = 0.7152;
+export const LUMINANCE_BLUE_WEIGHT = 0.0722;
+
+export function rgbLuminance(r, g, b) {
+  // Formula: https://en.wikipedia.org/wiki/Relative_luminance
+  return LUMINANCE_RED_WEIGHT * r + LUMINANCE_GREEN_WEIGHT * g + LUMINANCE_BLUE_WEIGHT * b;
+}
 
 export function getParamFromQuery(query, param) {
   const vars = query.split('&');
@@ -67,11 +78,9 @@ export function getShortUrl(longUrl) {
 }
 
 export function supersetURL(rootUrl, getParams = {}) {
-  const url = new URL(rootUrl, window.location.origin);
-  for (const k in getParams) {
-    url.searchParams.set(k, getParams[k]);
-  }
-  return url.href;
+  const parsedUrl = new URI(rootUrl).absoluteTo(window.location.origin);
+  parsedUrl.search(getParams);
+  return parsedUrl.href();
 }
 
 export function optionLabel(opt) {
