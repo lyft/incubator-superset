@@ -1,6 +1,9 @@
+/* eslint global-require: 0 */
 import d3 from 'd3';
 import { SupersetClient } from '@superset-ui/connection';
 import getClientErrorObject from './getClientErrorObject';
+import URI from 'urijs';
+
 
 export const EARTH_CIRCUMFERENCE_KM = 40075.16;
 export const LUMINANCE_RED_WEIGHT = 0.2126;
@@ -72,11 +75,9 @@ export function getShortUrl(longUrl) {
 }
 
 export function supersetURL(rootUrl, getParams = {}) {
-  const url = new URL(rootUrl, window.location.origin);
-  for (const k in getParams) {
-    url.searchParams.set(k, getParams[k]);
-  }
-  return url.href;
+  const parsedUrl = new URI(rootUrl).absoluteTo(window.location.origin);
+  parsedUrl.search(getParams);
+  return parsedUrl.href();
 }
 
 export function isTruthy(obj) {
