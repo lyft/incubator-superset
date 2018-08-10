@@ -28,7 +28,12 @@ from sqlalchemy import (
 from sqlalchemy.orm import backref, relationship
 
 from superset import security_manager
+<<<<<<< HEAD
 from superset.models.helpers import AuditMixinNullable, ExtraJSONMixin
+=======
+from superset.models.helpers import AuditMixinNullable
+from superset.models.tags import QueryUpdater
+>>>>>>> a8ac3fbe... Landing Page
 from superset.utils.core import QueryStatus, user_label
 
 
@@ -173,3 +178,12 @@ class SavedQuery(Model, AuditMixinNullable, ExtraJSONMixin):
     @property
     def sqlalchemy_uri(self):
         return self.database.sqlalchemy_uri
+
+    def url(self):
+        return '/superset/sqllab?savedQueryId={0}'.format(self.id)
+
+
+# events for updating tags
+sqla.event.listen(SavedQuery, 'after_insert', QueryUpdater.after_insert)
+sqla.event.listen(SavedQuery, 'after_update', QueryUpdater.after_update)
+sqla.event.listen(SavedQuery, 'after_delete', QueryUpdater.after_delete)
