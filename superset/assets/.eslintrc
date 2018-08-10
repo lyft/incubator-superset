@@ -9,6 +9,10 @@
   "env": {
     "browser": true
   },
+  "globals": {
+    "document": true,
+    "window": true,
+  },
   "rules": {
     "prefer-template": 0,
     "new-cap": 0,
