@@ -518,9 +518,9 @@ export default function nvd3Vis(slice, payload) {
     chart.width(width);
     chart.height(height);
 
-    //XXX: quick fix while I figure out the real problem
+    // XXX: quick fix while I figure out the real problem
     if (slice.container === null) {
-      return;
+      return null;
     }
 
     slice.container.css('height', height + 'px');
