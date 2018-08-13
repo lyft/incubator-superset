@@ -14,6 +14,7 @@ const propTypes = {
   dashboardId: PropTypes.number.isRequired,
   dashboardTitle: PropTypes.string.isRequired,
   expandedSlices: PropTypes.object.isRequired,
+  refreshInterval: PropTypes.string,
   layout: PropTypes.object.isRequired,
   saveType: PropTypes.oneOf([SAVE_TYPE_OVERWRITE, SAVE_TYPE_NEWDASHBOARD]),
   triggerNode: PropTypes.node.isRequired,
@@ -27,6 +28,7 @@ const propTypes = {
 const defaultProps = {
   isMenuItem: false,
   saveType: SAVE_TYPE_OVERWRITE,
+  refreshInterval: null,
 };
 
 class SaveModal extends React.PureComponent {
@@ -74,6 +76,7 @@ class SaveModal extends React.PureComponent {
       layout: positions,
       css,
       expandedSlices,
+      refreshInterval,
       filters,
       dashboardId,
     } = this.props;
@@ -82,6 +85,7 @@ class SaveModal extends React.PureComponent {
       positions,
       css,
       expanded_slices: expandedSlices,
+      refresh_interval: refreshInterval,
       dashboard_title:
         saveType === SAVE_TYPE_NEWDASHBOARD ? newDashName : dashboardTitle,
       default_filters: JSON.stringify(filters),

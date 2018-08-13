@@ -166,6 +166,7 @@ export default function(bootstrapData) {
       refresh: false,
       filters,
       expandedSlices: dashboard.metadata.expanded_slices || {},
+      refreshInterval: dashboard.metadata.refresh_interval,
       css: dashboard.css || '',
       editMode: dashboard.dash_edit_perm && editMode,
       showBuilderPane: dashboard.dash_edit_perm && editMode,

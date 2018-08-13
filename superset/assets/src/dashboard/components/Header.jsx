@@ -26,6 +26,7 @@ const propTypes = {
   layout: PropTypes.object.isRequired,
   filters: PropTypes.object.isRequired,
   expandedSlices: PropTypes.object.isRequired,
+  refreshInterval: PropTypes.string,
   css: PropTypes.string.isRequired,
   isStarred: PropTypes.bool.isRequired,
   onSave: PropTypes.func.isRequired,
@@ -50,6 +51,10 @@ const propTypes = {
   redoLength: PropTypes.number.isRequired,
   setMaxUndoHistoryExceeded: PropTypes.func.isRequired,
   maxUndoHistoryToast: PropTypes.func.isRequired,
+};
+
+const defaultProps = {
+  refreshInterval: null,
 };
 
 class Header extends React.PureComponent {
@@ -135,6 +140,7 @@ class Header extends React.PureComponent {
       dashboardTitle,
       layout: positions,
       expandedSlices,
+      refreshInterval,
       css,
       filters,
       dashboardInfo,
@@ -143,6 +149,7 @@ class Header extends React.PureComponent {
     const data = {
       positions,
       expanded_slices: expandedSlices,
+      refresh_interval: refreshInterval,
       css,
       dashboard_title: dashboardTitle,
       default_filters: JSON.stringify(filters),
@@ -174,6 +181,7 @@ class Header extends React.PureComponent {
       layout,
       filters,
       expandedSlices,
+      refreshInterval,
       css,
       onUndo,
       onRedo,
@@ -296,6 +304,7 @@ class Header extends React.PureComponent {
             layout={layout}
             filters={filters}
             expandedSlices={expandedSlices}
+            refreshInterval={refreshInterval}
             css={css}
             onSave={onSave}
             onChange={onChange}
@@ -314,5 +323,6 @@ class Header extends React.PureComponent {
 }
 
 Header.propTypes = propTypes;
+Header.defaultProps = defaultProps;
 
 export default Header;

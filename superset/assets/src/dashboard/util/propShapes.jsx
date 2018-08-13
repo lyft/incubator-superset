@@ -53,6 +53,7 @@ export const dashboardStatePropShape = PropTypes.shape({
   refresh: PropTypes.bool.isRequired,
   filters: PropTypes.object.isRequired,
   expandedSlices: PropTypes.object,
+  refreshInterval: PropTypes.string,
   editMode: PropTypes.bool,
   showBuilderPane: PropTypes.bool,
   hasUnsavedChanges: PropTypes.bool,

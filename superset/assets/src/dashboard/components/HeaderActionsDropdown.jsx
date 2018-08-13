@@ -31,9 +31,12 @@ const propTypes = {
   filters: PropTypes.object.isRequired,
   expandedSlices: PropTypes.object.isRequired,
   onSave: PropTypes.func.isRequired,
+  refreshInterval: PropTypes.string,
 };
 
-const defaultProps = {};
+const defaultProps = {
+  refreshInterval: null,
+};
 
 class HeaderActionsDropdown extends React.PureComponent {
   static discardChanges() {
@@ -86,7 +89,10 @@ class HeaderActionsDropdown extends React.PureComponent {
       onSave,
       userCanEdit,
       userCanSave,
+      refreshInterval,
     } = this.props;
+
+    console.log('HERE', refreshInterval);
 
     const emailTitle = t('Superset Dashboard');
     const emailSubject = `${emailTitle} ${dashboardTitle}`;
@@ -110,6 +116,7 @@ class HeaderActionsDropdown extends React.PureComponent {
             layout={layout}
             filters={filters}
             expandedSlices={expandedSlices}
+            refreshInterval={refreshInterval}
             css={css}
             onSave={onSave}
             isMenuItem
@@ -136,9 +143,7 @@ class HeaderActionsDropdown extends React.PureComponent {
           {t('Force refresh dashboard')}
         </MenuItem>
         <RefreshIntervalModal
-          onChange={refreshInterval =>
-            startPeriodicRender(refreshInterval * 1000)
-          }
+          onChange={interval => startPeriodicRender(interval * 1000)}
           triggerNode={<span>{t('Set auto-refresh interval')}</span>}
         />
         {editMode && (
