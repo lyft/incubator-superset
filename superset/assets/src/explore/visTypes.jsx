@@ -990,9 +990,6 @@ export const visTypes = {
       metrics: {
         validators: [],
       },
-      time_grain_sqla: {
-        default: null,
-      },
     },
   },
 
