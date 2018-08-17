@@ -47,6 +47,7 @@ function mapStateToProps({
       (undoableLayout.present[DASHBOARD_HEADER_ID] || {}).meta || {}
     ).text,
     expandedSlices: dashboardState.expandedSlices,
+    refreshInterval: dashboardState.refreshInterval,
     css: dashboardState.css,
     charts,
     userId: dashboardInfo.userId,

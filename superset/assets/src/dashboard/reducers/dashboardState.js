@@ -7,6 +7,7 @@ import {
   REMOVE_SLICE,
   SET_EDIT_MODE,
   SET_MAX_UNDO_HISTORY_EXCEEDED,
+  SET_REFRESH_INTERVAL,
   SET_UNSAVED_CHANGES,
   TOGGLE_BUILDER_PANE,
   TOGGLE_EXPAND_SLICE,
@@ -73,6 +74,10 @@ export default function dashboardStateReducer(state = {}, action) {
         updatedExpandedSlices[sliceId] = true;
       }
       return { ...state, expandedSlices: updatedExpandedSlices };
+    },
+    [SET_REFRESH_INTERVAL]() {
+      console.log(action);
+      return { ...state, refreshInterval: action.refreshInterval };
     },
     [ON_CHANGE]() {
       return { ...state, hasUnsavedChanges: true };

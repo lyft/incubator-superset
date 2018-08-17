@@ -14,7 +14,7 @@ const propTypes = {
   dashboardId: PropTypes.number.isRequired,
   dashboardTitle: PropTypes.string.isRequired,
   expandedSlices: PropTypes.object.isRequired,
-  refreshInterval: PropTypes.string,
+  refreshInterval: PropTypes.number,
   layout: PropTypes.object.isRequired,
   saveType: PropTypes.oneOf([SAVE_TYPE_OVERWRITE, SAVE_TYPE_NEWDASHBOARD]),
   triggerNode: PropTypes.node.isRequired,
@@ -28,7 +28,7 @@ const propTypes = {
 const defaultProps = {
   isMenuItem: false,
   saveType: SAVE_TYPE_OVERWRITE,
-  refreshInterval: null,
+  refreshInterval: 0,
 };
 
 class SaveModal extends React.PureComponent {

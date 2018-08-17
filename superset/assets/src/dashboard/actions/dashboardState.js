@@ -76,6 +76,13 @@ export function saveFaveStar(id, isStarred) {
   };
 }
 
+export const SET_REFRESH_INTERVAL = 'SET_REFRESH_INTERVAL';
+export function setRefreshInterval(refreshInterval) {
+  return dispatch => {
+    dispatch({ type: SET_REFRESH_INTERVAL, refreshInterval });
+  };
+}
+
 export const TOGGLE_EXPAND_SLICE = 'TOGGLE_EXPAND_SLICE';
 export function toggleExpandSlice(sliceId) {
   return { type: TOGGLE_EXPAND_SLICE, sliceId };

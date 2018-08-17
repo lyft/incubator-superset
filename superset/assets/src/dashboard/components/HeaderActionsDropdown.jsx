@@ -12,6 +12,7 @@ import { SAVE_TYPE_NEWDASHBOARD } from '../util/constants';
 import { t } from '../../locales';
 import URLShortLinkModal from '../../components/URLShortLinkModal';
 import getDashboardUrl from '../util/getDashboardUrl';
+import { setRefreshInterval } from '../actions/dashboardState';
 
 const propTypes = {
   addSuccessToast: PropTypes.func.isRequired,
@@ -31,11 +32,11 @@ const propTypes = {
   filters: PropTypes.object.isRequired,
   expandedSlices: PropTypes.object.isRequired,
   onSave: PropTypes.func.isRequired,
-  refreshInterval: PropTypes.string,
+  refreshInterval: PropTypes.number,
 };
 
 const defaultProps = {
-  refreshInterval: null,
+  refreshInterval: 0,
 };
 
 class HeaderActionsDropdown extends React.PureComponent {
@@ -49,6 +50,9 @@ class HeaderActionsDropdown extends React.PureComponent {
       css: props.css,
       cssTemplates: [],
     };
+
+    console.log(props.refreshInterval);
+    props.startPeriodicRender(props.refreshInterval * 1000);
 
     this.changeCss = this.changeCss.bind(this);
   }
@@ -78,7 +82,6 @@ class HeaderActionsDropdown extends React.PureComponent {
     const {
       dashboardTitle,
       dashboardId,
-      startPeriodicRender,
       forceRefreshAllCharts,
       editMode,
       css,
@@ -91,8 +94,6 @@ class HeaderActionsDropdown extends React.PureComponent {
       userCanSave,
       refreshInterval,
     } = this.props;
-
-    console.log('HERE', refreshInterval);
 
     const emailTitle = t('Superset Dashboard');
     const emailSubject = `${emailTitle} ${dashboardTitle}`;
@@ -143,7 +144,7 @@ class HeaderActionsDropdown extends React.PureComponent {
           {t('Force refresh dashboard')}
         </MenuItem>
         <RefreshIntervalModal
-          onChange={interval => startPeriodicRender(interval * 1000)}
+          onChange={setRefreshInterval}
           triggerNode={<span>{t('Set auto-refresh interval')}</span>}
         />
         {editMode && (
