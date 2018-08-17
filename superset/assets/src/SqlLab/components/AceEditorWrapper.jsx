@@ -4,10 +4,7 @@ import AceEditor from 'react-ace';
 import 'brace/mode/sql';
 import 'brace/theme/github';
 import 'brace/ext/language_tools';
-import ace from 'brace';
 import { areArraysShallowEqual } from '../../reduxUtils';
-
-const langTools = ace.acequire('ace/ext/language_tools');
 
 const keywords = (
   'SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|AND|OR|GROUP|BY|ORDER|LIMIT|OFFSET|HAVING|AS|CASE|' +
@@ -50,9 +47,19 @@ const defaultProps = {
 class AceEditorWrapper extends React.PureComponent {
   constructor(props) {
     super(props);
+
+    const completer = {
+      getCompletions: this.getCompletions.bind(this),
+      insertMatch: (editor, data) => {
+        console.log(editor, data);
+        // editor.completer.insertMatch({ value: data.value + ' ' });
+      },
+    };
+
     this.state = {
       sql: props.sql,
       selectedText: '',
+      completer,
     };
     this.onChange = this.onChange.bind(this);
   }
@@ -106,6 +113,7 @@ class AceEditorWrapper extends React.PureComponent {
     this.props.onChange(text);
   }
   getCompletions(aceEditor, session, pos, prefix, callback) {
+    console.log('called');
     callback(null, this.state.words);
   }
   setAutoCompleter(props) {
@@ -123,15 +131,7 @@ class AceEditorWrapper extends React.PureComponent {
     words = words.concat(Object.keys(columns).map(col => (
       { name: col, value: col, score: 50, meta: 'column' }
     )), sqlWords);
-
-    this.setState({ words }, () => {
-      const completer = {
-        getCompletions: this.getCompletions.bind(this),
-      };
-      if (langTools) {
-        langTools.setCompleters([completer]);
-      }
-    });
+    this.setState({ words });
   }
   render() {
     return (
@@ -144,7 +144,7 @@ class AceEditorWrapper extends React.PureComponent {
         onChange={this.onChange}
         width="100%"
         editorProps={{ $blockScrolling: true }}
-        enableLiveAutocompletion
+        enableLiveAutocompletion={[this.state.completer]}
         value={this.state.sql}
       />
     );
