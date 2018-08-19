@@ -510,7 +510,7 @@ export const visTypes = {
         expanded: true,
         controlSetRows: [
           ['spatial', 'size'],
-          ['row_limit', null],
+          ['row_limit', 'filter_nulls'],
           ['adhoc_filters'],
         ],
       },
@@ -549,7 +549,7 @@ export const visTypes = {
         expanded: true,
         controlSetRows: [
           ['spatial', 'size'],
-          ['row_limit', null],
+          ['row_limit', 'filter_nulls'],
           ['adhoc_filters'],
         ],
       },
@@ -589,7 +589,7 @@ export const visTypes = {
         expanded: true,
         controlSetRows: [
           ['line_column', 'line_type'],
-          ['row_limit', null],
+          ['row_limit', 'filter_nulls'],
           ['adhoc_filters'],
         ],
       },
@@ -623,7 +623,7 @@ export const visTypes = {
         expanded: true,
         controlSetRows: [
           ['spatial', 'size'],
-          ['row_limit', null],
+          ['row_limit', 'filter_nulls'],
           ['adhoc_filters'],
         ],
       },
@@ -669,7 +669,8 @@ export const visTypes = {
         label: t('Query'),
         expanded: true,
         controlSetRows: [
-          ['geojson', 'row_limit'],
+          ['geojson', null],
+          ['row_limit', 'filter_nulls'],
           ['adhoc_filters'],
         ],
       },
@@ -758,7 +759,7 @@ export const visTypes = {
         expanded: true,
         controlSetRows: [
           ['line_column', 'line_type'],
-          ['row_limit', null],
+          ['row_limit', 'filter_nulls'],
           ['adhoc_filters'],
         ],
       },
@@ -799,7 +800,7 @@ export const visTypes = {
         expanded: true,
         controlSetRows: [
           ['start_spatial', 'end_spatial'],
-          ['row_limit', null],
+          ['row_limit', 'filter_nulls'],
           ['adhoc_filters'],
         ],
       },
@@ -848,7 +849,8 @@ export const visTypes = {
         label: t('Query'),
         expanded: true,
         controlSetRows: [
-          ['spatial', 'row_limit'],
+          ['spatial', null],
+          ['row_limit', 'filter_nulls'],
           ['adhoc_filters'],
         ],
       },
