@@ -18,6 +18,7 @@ import inspect
 from itertools import product
 import logging
 import math
+import os
 import re
 import traceback
 import uuid
@@ -36,6 +37,7 @@ import polyline
 import simplejson as json
 from six import string_types, text_type
 from six.moves import cPickle as pkl, reduce
+import sqlalchemy
 
 from superset import app, cache, get_css_manifest_files, utils
 from superset.exceptions import NullValueException, SpatialException
@@ -2266,7 +2268,6 @@ class DeckScreengrid(BaseDeckGLViz):
     viz_type = 'deck_screengrid'
     verbose_name = _('Deck.gl - Screen Grid')
     spatial_control_keys = ['spatial']
-    is_timeseries = True
 
     def query_obj(self):
         fd = self.form_data
@@ -2381,6 +2382,79 @@ class DeckGeoJson(BaseDeckGLViz):
     def get_properties(self, d):
         geojson = d.get(self.form_data.get('geojson'))
         return json.loads(geojson)
+
+
+class DeckZipCodes(BaseDeckGLViz):
+
+    """Custom viz for Lyft, shows zip codes as geojson."""
+
+    viz_type = 'deck_zipcodes'
+    verbose_name = _('Deck.gl - ZIP codes')
+    is_timeseries = True
+
+    user = os.environ.get('CREDENTIALS_LYFTPG_USER', '')
+    password = os.environ.get('CREDENTIALS_LYFTPG_PASSWORD', '')
+    url = (
+        'postgresql+psycopg2://'
+        '{user}:{password}'
+        '@analytics-platform-vpc.c067nfzisc99.us-east-1.rds.amazonaws.com:5432'
+        '/platform'.format(user=user, password=password)
+    )
+
+    def query_obj(self):
+        fd = self.form_data
+        self.is_timeseries = fd.get('time_grain_sqla') or fd.get('granularity')
+
+        d = super(DeckZipCodes, self).query_obj()
+        self.zipcode_col = self.form_data.get('geojson')
+        d['groupby'] = [self.zipcode_col]
+        return d
+
+    def get_geojson(self, zipcodes):
+        out = {}
+        missing = set()
+        for zipcode in zipcodes:
+            cache_key = 'zipcode_geojson_{}'.format(zipcode)
+            geojson = cache and cache.get(cache_key)
+            if geojson:
+                out[zipcode] = geojson
+            else:
+                missing.add(str(zipcode))
+
+        if not missing:
+            return out
+
+        # fetch missing geojson from lyftpg
+        in_clause = ', '.join(['%s'] * len(missing))
+        query = (
+            'SELECT zipcode, geojson FROM zip_codes WHERE zipcode IN ({0})'
+            .format(in_clause))
+        conn = sqlalchemy.create_engine(self.url, client_encoding='utf8')
+        results = conn.execute(query, tuple(missing)).fetchall()
+
+        for zipcode, geojson in results:
+            out[zipcode] = geojson
+            if cache and len(results) < 10000:  # avoid storing too much
+                cache_key = 'zipcode_geojson_{}'.format(zipcode)
+                try:
+                    cache.set(cache_key, geojson, timeout=86400)
+                except Exception:
+                    pass
+
+        return out
+
+    def get_data(self, df):
+        self.metric_label = self.get_metric_label(self.metric)
+        data = super(DeckZipCodes, self).get_data(df)
+        data['geojson'] = self.get_geojson(set(df[self.zipcode_col]))
+        return data
+
+    def get_properties(self, d):
+        return {
+            'metric': d.get(self.metric_label) or 1,
+            'zipcode': d.get(self.zipcode_col),
+            DTTM_ALIAS: d.get(DTTM_ALIAS),
+        }
 
 
 class DeckArc(BaseDeckGLViz):
