@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# pylint: disable=broad-except,no-self-use
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
