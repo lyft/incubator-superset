@@ -701,6 +701,53 @@ export const visTypes = {
     ],
   },
 
+  deck_zipcodes: {
+    label: t('Deck.gl - Zip codes'),
+    requiresTime: true,
+    controlPanelSections: [
+      {
+        label: t('Query'),
+        expanded: true,
+        controlSetRows: [
+          ['geojson', 'autozoom'],
+          ['color_picker', 'size'],
+          ['adhoc_filters'],
+        ],
+      },
+      {
+        label: t('Map'),
+        controlSetRows: [
+          ['mapbox_style', 'viewport'],
+          // TODO ['autozoom', null],
+        ],
+      },
+      {
+        label: t('Advanced'),
+        controlSetRows: [
+          ['js_columns'],
+          ['js_data_mutator'],
+          ['js_tooltip'],
+          ['js_onclick_href'],
+        ],
+      },
+    ],
+    controlOverrides: {
+      adhoc_filters: {
+        validators: [v.nonEmpty],
+      },
+      geojson: {
+        label: t('ZIP code'),
+        description: t('Column with ZIP codes'),
+      },
+      size: {
+        label: t('Weight'),
+        description: t("Metric used as a weight for the grid's coloring"),
+        validators: [v.nonEmpty],
+      },
+      time_grain_sqla: timeGrainSqlaAnimationOverrides,
+    },
+  },
+
   deck_polygon: {
     label: t('Deck.gl - Polygon'),
     requiresTime: true,
