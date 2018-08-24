@@ -239,6 +239,8 @@ class BaseViz(object):
         """Building a query object"""
         form_data = self.form_data
         gb = form_data.get('groupby') or []
+        if not isinstance(gb, list):
+            gb = [gb]
         metrics = self.all_metrics or []
         columns = form_data.get('columns') or []
         groupby = []
@@ -2406,7 +2408,7 @@ class DeckZipCodes(BaseDeckGLViz):
         self.is_timeseries = fd.get('time_grain_sqla') or fd.get('granularity')
 
         d = super(DeckZipCodes, self).query_obj()
-        self.zipcode_col = self.form_data.get('geojson')
+        self.zipcode_col = self.form_data.get('groupby')
         d['groupby'] = [self.zipcode_col]
         return d
 

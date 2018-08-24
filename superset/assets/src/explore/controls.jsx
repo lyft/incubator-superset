@@ -1505,6 +1505,22 @@ export const controls = {
     description: t('Send range filter events to other charts'),
   },
 
+  propagate_filter: {
+    type: 'CheckboxControl',
+    label: t('Propagate'),
+    renderTrigger: true,
+    default: true,
+    description: t('Send filter events to other charts'),
+  },
+
+  toggle_zipcodes: {
+    type: 'CheckboxControl',
+    label: t('Multiple filtering'),
+    renderTrigger: true,
+    default: true,
+    description: t('Allow sending multiple ZIP codes as a filter event'),
+  },
+
   show_labels: {
     type: 'CheckboxControl',
     label: t('Show Labels'),

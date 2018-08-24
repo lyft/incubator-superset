@@ -26,7 +26,7 @@ function getPoints(geojson) {
   return points;
 }
 
-function getLayer(formData, payload, slice, filters) {
+function getLayer(formData, payload, slice, selected, onSelect, filters) {
   const fd = formData;
   let data = payload.data.features.map(d => ({ ...d, geometry: payload.data.geojson[d.zipcode] }));
   data = data.filter(d => d.geometry !== undefined);
@@ -78,6 +78,26 @@ function getLayer(formData, payload, slice, filters) {
       }
     };
   }
+  if (layerProps.onClick === undefined) {
+    layerProps.onClick = (o) => {
+      const zipcode = o.object.zipcode;
+      onSelect(zipcode);
+    };
+  }
+
+  function getLineColor(d) {
+    if (selected.indexOf(d.properties.zipcode) === -1) {
+      return [0, 0, 0, 100];
+    }
+    return [255, 0, 0, 100];
+  }
+
+  function getLineWidth(d) {
+    if (selected.indexOf(d.properties.zipcode) === -1) {
+      return 1;
+    }
+    return 10;
+  }
 
   return new GeoJsonLayer({
     id: `zipcodes-layer-${fd.slice_id}`,
@@ -89,9 +109,9 @@ function getLayer(formData, payload, slice, filters) {
     lineWidthScale: 20,
     lineWidthMinPixels: 1,
     getFillColor: d => d.properties.color,
-    getLineColor: [0, 0, 0, 100],
+    getLineColor,
     getRadius: 100,
-    getLineWidth: 1,
+    getLineWidth,
     getElevation: 30,
     ...layerProps,
   });
@@ -114,13 +134,14 @@ class DeckGLZipCodes extends React.PureComponent {
     const timestamps = features.map(f => f.__timestamp);
     const { start, end, step, values, disabled } = getPlaySliderParams(timestamps, timeGrain);
 
-    return { start, end, step, values, disabled };
+    return { start, end, step, values, disabled, selected: [] };
   }
   constructor(props) {
     super(props);
     this.state = DeckGLZipCodes.getDerivedStateFromProps(props);
 
     this.getLayers = this.getLayers.bind(this);
+    this.onSelect = this.onSelect.bind(this);
   }
   componentWillReceiveProps(nextProps) {
     this.setState(DeckGLZipCodes.getDerivedStateFromProps(nextProps, this.state));
@@ -143,9 +164,33 @@ class DeckGLZipCodes extends React.PureComponent {
       this.props.slice.formData,
       this.props.payload,
       this.props.slice,
+      this.state.selected,
+      this.onSelect,
       filters);
 
     return [layer];
+  }
+  onSelect(zipcode) {
+    const { slice } = this.props;
+    const fd = slice.formData;
+
+    // toggle selected zipcodes
+    const selected = [...this.state.selected];
+    if (fd.toggle_zipcodes) {
+      const i = selected.indexOf(zipcode);
+      if (i === -1) {
+        selected.push(zipcode);
+      } else {
+        selected.splice(i, 1);
+      }
+    } else {
+      selected.splice(0, 1, zipcode);
+    }
+
+    this.setState({ selected });
+    if (fd.propagate_filter) {
+      slice.addFilter(fd.groupby, selected, false, true);
+    }
   }
   render() {
     return (
