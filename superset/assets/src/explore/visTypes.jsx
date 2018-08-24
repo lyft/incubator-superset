@@ -703,10 +703,11 @@ export const visTypes = {
         label: t('Query'),
         expanded: true,
         controlSetRows: [
-          ['geojson', 'autozoom'],
-          ['row_limit', null],
+          ['groupby', 'autozoom'],
+          ['row_limit', 'filter_nulls'],
           ['color_picker', 'size'],
           ['adhoc_filters'],
+          ['propagate_filter', 'toggle_zipcodes'],
         ],
       },
       {
@@ -730,7 +731,8 @@ export const visTypes = {
       adhoc_filters: {
         validators: [v.nonEmpty],
       },
-      geojson: {
+      groupby: {
+        multi: false,
         label: t('ZIP code'),
         description: t('Column with ZIP codes'),
       },
