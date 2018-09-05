@@ -1842,6 +1842,8 @@ export const controls = {
     default: 11,
     description: t('Zoom level of the map'),
     places: 8,
+    // Viewport zoom shouldn't prompt user to re-run query
+    dontRefreshOnChange: true,
   },
 
   viewport_latitude: {
@@ -1852,6 +1854,8 @@ export const controls = {
     isFloat: true,
     description: t('Latitude of default viewport'),
     places: 8,
+    // Viewport latitude changes shouldn't prompt user to re-run query
+    dontRefreshOnChange: true,
   },
 
   viewport_longitude: {
@@ -1862,6 +1866,8 @@ export const controls = {
     isFloat: true,
     description: t('Longitude of default viewport'),
     places: 8,
+    // Viewport longitude changes shouldn't prompt user to re-run query
+    dontRefreshOnChange: true,
   },
 
   render_while_dragging: {
