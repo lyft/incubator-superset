@@ -1837,6 +1837,7 @@ export const controls = {
   viewport_zoom: {
     type: 'TextControl',
     label: t('Zoom'),
+    renderTrigger: true,
     isFloat: true,
     default: 11,
     description: t('Zoom level of the map'),
@@ -1846,6 +1847,7 @@ export const controls = {
   viewport_latitude: {
     type: 'TextControl',
     label: t('Default latitude'),
+    renderTrigger: true,
     default: 37.772123,
     isFloat: true,
     description: t('Latitude of default viewport'),
@@ -1855,6 +1857,7 @@ export const controls = {
   viewport_longitude: {
     type: 'TextControl',
     label: t('Default longitude'),
+    renderTrigger: true,
     default: -122.405293,
     isFloat: true,
     description: t('Longitude of default viewport'),
