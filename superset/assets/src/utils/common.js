@@ -1,6 +1,7 @@
 /* eslint global-require: 0 */
 import $ from 'jquery';
 import URI from 'urijs';
+import { t } from '../locales';
 
 const d3 = require('d3');
 
@@ -131,3 +132,8 @@ export function optionFromValue(opt) {
   // From a list of options, handles special values & labels
   return { value: optionValue(opt), label: optionLabel(opt) };
 }
+
+// Error messages used in many places across applications
+export const COMMON_ERR_MESSAGES = {
+  SESSION_TIMED_OUT: t('Your session timed out, please refresh your page and try again.'),
+};
