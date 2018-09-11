@@ -1794,6 +1794,7 @@ export const visTypes = {
       },
       {
         label: t('Viewport'),
+        expanded: true,
         controlSetRows: [
           ['viewport_longitude', 'viewport_latitude'],
           ['viewport_zoom', null],
