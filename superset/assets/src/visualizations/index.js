@@ -49,6 +49,7 @@ export const VIZ_TYPES = {
   deck_multi: 'deck_multi',
   deck_arc: 'deck_arc',
   deck_polygon: 'deck_polygon',
+  deck_zipcodes: 'deck_zipcodes',
   rose: 'rose',
 };
 
@@ -136,6 +137,8 @@ const vizMap = {
     loadVis(import(/* webpackChunkName: "deckgl/layers/polygon" */ './deckgl/layers/polygon.jsx')),
   [VIZ_TYPES.deck_multi]: () =>
     loadVis(import(/* webpackChunkName: "deckgl/multi" */ './deckgl/multi.jsx')),
+  [VIZ_TYPES.deck_zipcodes]: () =>
+    loadVis(import(/* webpackChunkName: "deckgl/layers/zipcodes" */ './deckgl/layers/zipcodes.jsx')),
   [VIZ_TYPES.rose]: () => loadVis(import(/* webpackChunkName: "rose" */ './rose.js')),
 };
 
