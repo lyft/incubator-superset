@@ -13,12 +13,14 @@ const propTypes = {
   aggregation: PropTypes.bool,
   disabled: PropTypes.bool,
   viewport: PropTypes.object.isRequired,
+  onViewportChange: PropTypes.func,
   children: PropTypes.node,
 };
 
 const defaultProps = {
   aggregation: false,
   disabled: false,
+  onViewportChange: () => {},
 };
 
 export default class AnimatableDeckGLContainer extends React.Component {
@@ -49,7 +51,7 @@ export default class AnimatableDeckGLContainer extends React.Component {
           {...this.other}
           viewport={viewport}
           layers={layers}
-          onViewportChange={newViewport => this.setState({ viewport: newViewport })}
+          onViewportChange={this.props.onViewportChange}
         />
         {!disabled &&
         <PlaySlider
