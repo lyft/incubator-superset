@@ -242,6 +242,14 @@ export const controls = {
     renderTrigger: true,
   },
 
+  target_color_picker: {
+    label: t('Target Color'),
+    description: t('Color of the target location'),
+    type: 'ColorPickerControl',
+    default: colorPrimary,
+    renderTrigger: true,
+  },
+
   legend_position: {
     label: t('Legend Position'),
     description: t('Choose the position of the legend'),
@@ -725,6 +733,7 @@ export const controls = {
     label: t('Stroke Width'),
     validators: [v.integer],
     default: null,
+    renderTrigger: true,
     choices: formatSelectOptions([1, 2, 3, 4, 5]),
   },
 
@@ -1459,10 +1468,10 @@ export const controls = {
 
   table_filter: {
     type: 'CheckboxControl',
-    label: t('Table Filter'),
+    label: t('Emit Filter Events'),
     renderTrigger: true,
     default: false,
-    description: t('Whether to apply filter when table cell is clicked'),
+    description: t('Whether to apply filter when items are clicked'),
   },
 
   align_pn: {
@@ -1766,6 +1775,17 @@ export const controls = {
     'Between 0 and 1.'),
   },
 
+  opacity: {
+    type: 'SliderControl',
+    label: t('Opacity'),
+    default: 80,
+    step: 1,
+    min: 0,
+    max: 100,
+    renderTrigger: true,
+    description: t('Opacity, expects values between 0 and 100'),
+  },
+
   viewport: {
     type: 'ViewportControl',
     label: t('Viewport'),
@@ -1780,28 +1800,37 @@ export const controls = {
   viewport_zoom: {
     type: 'TextControl',
     label: t('Zoom'),
+    renderTrigger: true,
     isFloat: true,
     default: 11,
     description: t('Zoom level of the map'),
     places: 8,
+    // Viewport zoom shouldn't prompt user to re-run query
+    dontRefreshOnChange: true,
   },
 
   viewport_latitude: {
     type: 'TextControl',
     label: t('Default latitude'),
+    renderTrigger: true,
     default: 37.772123,
     isFloat: true,
     description: t('Latitude of default viewport'),
     places: 8,
+    // Viewport latitude changes shouldn't prompt user to re-run query
+    dontRefreshOnChange: true,
   },
 
   viewport_longitude: {
     type: 'TextControl',
     label: t('Default longitude'),
+    renderTrigger: true,
     default: -122.405293,
     isFloat: true,
     description: t('Longitude of default viewport'),
     places: 8,
+    // Viewport longitude changes shouldn't prompt user to re-run query
+    dontRefreshOnChange: true,
   },
 
   render_while_dragging: {
@@ -2110,6 +2139,7 @@ export const controls = {
     choices: [
       ['polyline', 'Polyline'],
       ['json', 'JSON'],
+      ['geohash', 'geohash (square)'],
     ],
   },
 
@@ -2231,7 +2261,7 @@ export const controls = {
     label: t('Filled'),
     renderTrigger: true,
     description: t('Whether to fill the objects'),
-    default: false,
+    default: true,
   },
 
   normalized: {

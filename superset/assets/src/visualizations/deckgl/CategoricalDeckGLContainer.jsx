@@ -30,11 +30,11 @@ function getCategories(fd, data) {
 
 const propTypes = {
   slice: PropTypes.object.isRequired,
-  data: PropTypes.array.isRequired,
   mapboxApiKey: PropTypes.string.isRequired,
   setControlValue: PropTypes.func.isRequired,
   viewport: PropTypes.object.isRequired,
   getLayer: PropTypes.func.isRequired,
+  payload: PropTypes.object.isRequired,
 };
 
 export default class CategoricalDeckGLContainer extends React.PureComponent {
@@ -50,11 +50,11 @@ export default class CategoricalDeckGLContainer extends React.PureComponent {
     const fd = nextProps.slice.formData;
 
     const timeGrain = fd.time_grain_sqla || fd.granularity || 'PT1M';
-    const timestamps = nextProps.data.map(f => f.__timestamp);
-    const { start, end, step, values, disabled } = getPlaySliderParams(timestamps, timeGrain);
-    const categories = getCategories(fd, nextProps.data);
+    const timestamps = nextProps.payload.data.features.map(f => f.__timestamp);
+    const { start, end, getStep, values, disabled } = getPlaySliderParams(timestamps, timeGrain);
+    const categories = getCategories(fd, nextProps.payload.data.features);
 
-    return { start, end, step, values, disabled, categories };
+    return { start, end, getStep, values, disabled, categories };
   }
   constructor(props) {
     super(props);
@@ -69,21 +69,19 @@ export default class CategoricalDeckGLContainer extends React.PureComponent {
   }
   addColor(data, fd) {
     const c = fd.color_picker || { r: 0, g: 0, b: 0, a: 1 };
-    const fixedColor = [c.r, c.g, c.b, 255 * c.a];
-
     return data.map((d) => {
       let color;
       if (fd.dimension) {
         color = hexToRGB(getColorFromScheme(d.cat_color, fd.color_scheme), c.a * 255);
-      } else {
-        color = fixedColor;
+        return { ...d, color };
       }
-      return { ...d, color };
+      return d;
     });
   }
   getLayers(values) {
-    const fd = this.props.slice.formData;
-    let data = [...this.props.data];
+    const { getLayer, payload, slice } = this.props;
+    const fd = slice.formData;
+    let data = [...payload.data.features];
 
     // Add colors from categories or fixed color
     data = this.addColor(data, fd);
@@ -106,7 +104,8 @@ export default class CategoricalDeckGLContainer extends React.PureComponent {
       data = data.filter(d => this.state.categories[d.cat_color].enabled);
     }
 
-    return [this.props.getLayer(fd, data, this.props.slice)];
+    payload.data.features = data;
+    return [getLayer(fd, payload, slice)];
   }
   toggleCategory(category) {
     const categoryState = this.state.categories[category];
@@ -135,7 +134,7 @@ export default class CategoricalDeckGLContainer extends React.PureComponent {
           getLayers={this.getLayers}
           start={this.state.start}
           end={this.state.end}
-          step={this.state.step}
+          getStep={this.state.getStep}
           values={this.state.values}
           disabled={this.state.disabled}
           viewport={this.props.viewport}
