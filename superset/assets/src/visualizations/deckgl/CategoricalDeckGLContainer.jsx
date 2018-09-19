@@ -54,7 +54,7 @@ export default class CategoricalDeckGLContainer extends React.PureComponent {
     const { start, end, step, values, disabled } = getPlaySliderParams(timestamps, timeGrain);
     const categories = getCategories(fd, nextProps.data);
 
-    return { start, end, step, values, disabled, categories };
+    return { start, end, step, values, disabled, categories, viewport: nextProps.viewport };
   }
   constructor(props) {
     super(props);
@@ -63,9 +63,13 @@ export default class CategoricalDeckGLContainer extends React.PureComponent {
     this.getLayers = this.getLayers.bind(this);
     this.toggleCategory = this.toggleCategory.bind(this);
     this.showSingleCategory = this.showSingleCategory.bind(this);
+    this.onViewportChange = this.onViewportChange.bind(this);
   }
   componentWillReceiveProps(nextProps) {
     this.setState(CategoricalDeckGLContainer.getDerivedStateFromProps(nextProps, this.state));
+  }
+  onViewportChange(viewport) {
+    this.setState({ viewport });
   }
   addColor(data, fd) {
     const c = fd.color_picker || { r: 0, g: 0, b: 0, a: 1 };
@@ -138,7 +142,8 @@ export default class CategoricalDeckGLContainer extends React.PureComponent {
           step={this.state.step}
           values={this.state.values}
           disabled={this.state.disabled}
-          viewport={this.props.viewport}
+          viewport={this.state.viewport}
+          onViewportChange={this.onViewportChange}
           mapboxApiAccessToken={this.props.mapboxApiKey}
           mapStyle={this.props.slice.formData.mapbox_style}
           setControlValue={this.props.setControlValue}

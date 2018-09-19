@@ -695,6 +695,57 @@ export const visTypes = {
     ],
   },
 
+  deck_zipcodes: {
+    label: t('Deck.gl - Zip codes'),
+    requiresTime: true,
+    controlPanelSections: [
+      {
+        label: t('Query'),
+        expanded: true,
+        controlSetRows: [
+          ['groupby', 'size'],
+          ['autozoom', 'filter_nulls'],
+          ['color_picker', 'legend_position'],
+          ['num_categories', 'break_points'],
+          ['row_limit', null],
+          ['adhoc_filters'],
+          ['propagate_filter', 'toggle_zipcodes'],
+        ],
+      },
+      {
+        label: t('Map'),
+        controlSetRows: [
+          ['mapbox_style', 'viewport'],
+        ],
+      },
+      {
+        label: t('Advanced'),
+        controlSetRows: [
+          ['js_columns'],
+          ['js_data_mutator'],
+          ['js_tooltip'],
+          ['js_onclick_href'],
+        ],
+      },
+    ],
+    controlOverrides: {
+      adhoc_filters: {
+        validators: [v.nonEmpty],
+      },
+      groupby: {
+        multi: false,
+        label: t('ZIP code'),
+        description: t('Column with ZIP codes'),
+      },
+      size: {
+        label: t('Weight'),
+        description: t("Metric used as a weight for the grid's coloring"),
+        validators: [v.nonEmpty],
+      },
+      time_grain_sqla: timeGrainSqlaAnimationOverrides,
+    },
+  },
+
   deck_polygon: {
     label: t('Deck.gl - Polygon'),
     requiresTime: true,
