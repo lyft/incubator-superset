@@ -257,6 +257,7 @@ export const controls = {
     clearable: false,
     default: 'tr',
     choices: [
+      [null, 'None'],
       ['tl', 'Top left'],
       ['tr', 'Top right'],
       ['bl', 'Bottom left'],
