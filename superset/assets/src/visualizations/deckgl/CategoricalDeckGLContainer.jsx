@@ -54,7 +54,7 @@ export default class CategoricalDeckGLContainer extends React.PureComponent {
     const { start, end, getStep, values, disabled } = getPlaySliderParams(timestamps, timeGrain);
     const categories = getCategories(fd, nextProps.payload.data.features);
 
-    return { start, end, step, values, disabled, categories, viewport: nextProps.viewport };
+    return { start, end, getStep, values, disabled, categories, viewport: nextProps.viewport };
   }
   constructor(props) {
     super(props);
