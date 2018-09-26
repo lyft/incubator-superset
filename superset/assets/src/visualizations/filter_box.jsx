@@ -149,31 +149,25 @@ class FilterBox extends React.Component {
     }
     // Add created options to filtersChoices, even though it doesn't exist,
     // or these options will exist in query sql but invisible to end user.
-    for (const filterKey in this.state.selectedValues) {
-      if (
-        !this.state.selectedValues.hasOwnProperty(filterKey) ||
-        !(filterKey in this.props.filtersChoices)
-      ) {
-        continue;
-      }
-      const existValues = this.props.filtersChoices[filterKey].map(f => f.id);
-      for (const v of this.state.selectedValues[filterKey]) {
-        if (existValues.indexOf(v) === -1) {
-          const addChoice = {
-            filter: filterKey,
-            id: v,
-            text: v,
-            metric: 0,
-          };
-          this.props.filtersChoices[filterKey].unshift(addChoice);
-        }
-      }
-    }
-    const filters = Object.keys(this.props.filtersChoices).map((filter) => {
-      const data = this.props.filtersChoices[filter];
-      const maxes = {};
-      maxes[filter] = d3.max(data, function (d) {
-        return d.metric;
+    Object.keys(selectedValues)
+      .filter(key => !selectedValues.hasOwnProperty(key)
+        || !(key in filtersChoices))
+      .forEach((key) => {
+        const choices = filtersChoices[key] || [];
+        const choiceIds = new Set(choices.map(f => f.id));
+        const selectedValuesForKey = Array.isArray(selectedValues[key])
+          ? selectedValues[key]
+          : [selectedValues[key]];
+        selectedValuesForKey
+          .filter(value => !choiceIds.has(value))
+          .forEach((value) => {
+            choices.unshift({
+              filter: key,
+              id: value,
+              text: value,
+              metric: 0,
+            });
+          });
       });
       return (
         <div key={filter} className="m-b-5">
