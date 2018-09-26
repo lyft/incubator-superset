@@ -8,43 +8,45 @@ const propTypes = {
   getLayers: PropTypes.func.isRequired,
   start: PropTypes.number.isRequired,
   end: PropTypes.number.isRequired,
-  getStep: PropTypes.func,
+  getStep: PropTypes.func.isRequired,
   values: PropTypes.array.isRequired,
   aggregation: PropTypes.bool,
   disabled: PropTypes.bool,
   viewport: PropTypes.object.isRequired,
   onViewportChange: PropTypes.func,
   children: PropTypes.node,
+  onViewportChange: PropTypes.func,
+  onValuesChange: PropTypes.func,
 };
 
 const defaultProps = {
   aggregation: false,
   disabled: false,
-  step: 1,
   onViewportChange: () => {},
+  onValuesChange: () => {},
 };
 
 export default class AnimatableDeckGLContainer extends React.Component {
   constructor(props) {
     super(props);
     const { getLayers, start, end, getStep, values, disabled, viewport, ...other } = props;
-    this.state = { values, viewport };
     this.other = other;
-    this.onChange = this.onChange.bind(this);
   }
   componentWillReceiveProps(nextProps) {
-    this.setState({ values: nextProps.values, viewport: nextProps.viewport });
-  }
-  onChange(newValues) {
-    this.setState({
-      values: Array.isArray(newValues)
-        ? newValues
-        : [newValues, this.props.getStep(newValues)],
-    });
+    this.setState({ values: nextProps.values });
   }
   render() {
-    const { start, end, getStep, disabled, aggregation, children, getLayers } = this.props;
-    const { values, viewport } = this.state;
+    const {
+      start,
+      end,
+      getStep,
+      disabled,
+      aggregation,
+      children,
+      getLayers,
+      values,
+      viewport,
+    } = this.props;
     const layers = getLayers(values);
     return (
       <div>
@@ -61,7 +63,7 @@ export default class AnimatableDeckGLContainer extends React.Component {
           step={getStep(start)}
           values={values}
           range={!aggregation}
-          onChange={this.onChange}
+          onChange={this.props.onValuesChange}
         />
         }
         {children}
