@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
 import json
 
 from alembic import op
@@ -37,18 +42,19 @@ def upgrade():
             Slice.viz_type.like('line'), Slice.viz_type.like('bar'))):
         params = json.loads(slc.params)
         layers = params.get('annotation_layers', [])
-        new_layers = []
-        if len(layers) and isinstance(layers[0], int):
+        if layers:
+            new_layers = []
             for layer in layers:
-                new_layers.append(
-                    {
-                        'annotationType': 'INTERVAL',
-                        'style': 'solid',
-                        'name': 'Layer {}'.format(layer),
-                        'show': True,
-                        'overrides': {'since': None, 'until': None},
-                        'value': 1, 'width': 1, 'sourceType': 'NATIVE',
-                    })
+                new_layers.append({
+                    'annotationType': 'INTERVAL',
+                    'style': 'solid',
+                    'name': 'Layer {}'.format(layer),
+                    'show': True,
+                    'overrides': {'since': None, 'until': None},
+                    'value': layer,
+                    'width': 1,
+                    'sourceType': 'NATIVE',
+                })
             params['annotation_layers'] = new_layers
             slc.params = json.dumps(params)
             session.merge(slc)
@@ -57,4 +63,16 @@ def upgrade():
 
 
 def downgrade():
-    pass
+    bind = op.get_bind()
+    session = db.Session(bind=bind)
+
+    for slc in session.query(Slice).filter(or_(
+            Slice.viz_type.like('line'), Slice.viz_type.like('bar'))):
+        params = json.loads(slc.params)
+        layers = params.get('annotation_layers', [])
+        if layers:
+            params['annotation_layers'] = [layer['value'] for layer in layers]
+            slc.params = json.dumps(params)
+            session.merge(slc)
+            session.commit()
+    session.close()
