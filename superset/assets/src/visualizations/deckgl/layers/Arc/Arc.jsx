@@ -4,10 +4,9 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 
 import { ArcLayer } from 'deck.gl';
-
-import CategoricalDeckGLContainer from '../CategoricalDeckGLContainer';
-
-import * as common from './common';
+import { commonLayerProps } from '../common';
+import createAdaptor from '../../createAdaptor';
+import { createCategoricalDeckGLComponent } from '../../factory';
 
 function getPoints(data) {
   const points = [];

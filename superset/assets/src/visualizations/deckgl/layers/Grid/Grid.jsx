@@ -1,12 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import { HexagonLayer } from 'deck.gl';
-
-import DeckGLContainer from './../DeckGLContainer';
-
-import * as common from './common';
-import sandboxedEval from '../../../modules/sandbox';
+import { GridLayer } from 'deck.gl';
+import { commonLayerProps } from '../common';
+import sandboxedEval from '../../../../modules/sandbox';
+import createAdaptor from '../../createAdaptor';
+import { createDeckGLComponent } from '../../factory';
 
 function getLayer(formData, payload, slice) {
   const fd = formData;
@@ -21,12 +20,11 @@ function getLayer(formData, payload, slice) {
     const jsFnMutator = sandboxedEval(fd.js_data_mutator);
     data = jsFnMutator(data);
   }
-
-  return new HexagonLayer({
-    id: `hex-layer-${fd.slice_id}`,
+  return new GridLayer({
+    id: `grid-layer-${fd.slice_id}`,
     data,
     pickable: true,
-    radius: fd.grid_size,
+    cellSize: fd.grid_size,
     minColor: [0, 0, 0, 0],
     extruded: fd.extruded,
     maxColor: [c.r, c.g, c.b, 255 * c.a],
@@ -41,7 +39,7 @@ function getPoints(data) {
   return data.map(d => d.position);
 }
 
-function deckHex(slice, payload, setControlValue) {
+function deckGrid(slice, payload, setControlValue) {
   const layer = getLayer(slice.formData, payload, slice);
   let viewport = {
     ...slice.formData.viewport,
@@ -66,6 +64,6 @@ function deckHex(slice, payload, setControlValue) {
 }
 
 module.exports = {
-  default: deckHex,
+  default: deckGrid,
   getLayer,
 };

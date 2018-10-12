@@ -3,10 +3,11 @@ import ReactDOM from 'react-dom';
 import { GeoJsonLayer } from 'deck.gl';
 // TODO import geojsonExtent from 'geojson-extent';
 
-import DeckGLContainer from './../DeckGLContainer';
-import * as common from './common';
-import { hexToRGB } from '../../../modules/colors';
-import sandboxedEval from '../../../modules/sandbox';
+import DeckGLContainer from '../../DeckGLContainer';
+import { hexToRGB } from '../../../../modules/colors';
+import sandboxedEval from '../../../../modules/sandbox';
+import { commonLayerProps } from '../common';
+import createAdaptor from '../../createAdaptor';
 
 const propertyMap = {
   fillColor: 'fillColor',
