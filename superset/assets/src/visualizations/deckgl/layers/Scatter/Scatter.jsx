@@ -4,10 +4,10 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 
 import { ScatterplotLayer } from 'deck.gl';
-
-import CategoricalDeckGLContainer from '../CategoricalDeckGLContainer';
-import * as common from './common';
-import { unitToRadius } from '../../../modules/geo';
+import { commonLayerProps } from '../common';
+import createAdaptor from '../../createAdaptor';
+import { createCategoricalDeckGLComponent } from '../../factory';
+import { unitToRadius } from '../../../../modules/geo';
 
 
 function getPoints(data) {
