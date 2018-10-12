@@ -2,14 +2,12 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 
 import { PolygonLayer } from 'deck.gl';
-import _ from 'underscore';
-import d3 from 'd3';
-
-import DeckGLContainer from './../DeckGLContainer';
-
-import * as common from './common';
-import { colorScalerFactory } from '../../../modules/colors';
-import sandboxedEval from '../../../modules/sandbox';
+import { flatten } from 'lodash';
+import { colorScalerFactory } from '../../../../modules/colors';
+import { commonLayerProps } from '../common';
+import sandboxedEval from '../../../../modules/sandbox';
+import createAdaptor from '../../createAdaptor';
+import { createDeckGLComponent } from '../../factory';
 
 function getPoints(features) {
   return _.flatten(features.map(d => d.polygon), true);
