@@ -1,46 +1,46 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import { GridLayer } from 'deck.gl';
-
-import DeckGLContainer from './../DeckGLContainer';
-
-import * as common from './common';
-import sandboxedEval from '../../../modules/sandbox';
+import { PathLayer } from 'deck.gl';
+import { commonLayerProps } from '../common';
+import sandboxedEval from '../../../../modules/sandbox';
+import createAdaptor from '../../createAdaptor';
+import { createDeckGLComponent } from '../../factory';
 
 function getLayer(formData, payload, slice) {
   const fd = formData;
   const c = fd.color_picker;
-  let data = payload.data.features.map(d => ({
-    ...d,
-    color: [c.r, c.g, c.b, 255 * c.a],
+  const fixedColor = [c.r, c.g, c.b, 255 * c.a];
+  let data = payload.data.features.map(feature => ({
+    ...feature,
+    path: feature.path,
+    width: fd.line_width,
+    color: fixedColor,
   }));
 
   if (fd.js_data_mutator) {
-    // Applying user defined data mutator if defined
     const jsFnMutator = sandboxedEval(fd.js_data_mutator);
     data = jsFnMutator(data);
   }
-  return new GridLayer({
-    id: `grid-layer-${fd.slice_id}`,
+
+  return new PathLayer({
+    id: `path-layer-${fd.slice_id}`,
     data,
-    pickable: true,
-    cellSize: fd.grid_size,
-    minColor: [0, 0, 0, 0],
-    extruded: fd.extruded,
-    maxColor: [c.r, c.g, c.b, 255 * c.a],
-    outline: false,
-    getElevationValue: points => points.reduce((sum, point) => sum + point.weight, 0),
-    getColorValue: points => points.reduce((sum, point) => sum + point.weight, 0),
+    rounded: true,
+    widthScale: 1,
     ...common.commonLayerProps(fd, slice),
   });
 }
 
 function getPoints(data) {
-  return data.map(d => d.position);
+  let points = [];
+  data.forEach((d) => {
+    points = points.concat(d.path);
+  });
+  return points;
 }
 
-function deckGrid(slice, payload, setControlValue) {
+function deckPath(slice, payload, setControlValue) {
   const layer = getLayer(slice.formData, payload, slice);
   let viewport = {
     ...slice.formData.viewport,
@@ -65,6 +65,6 @@ function deckGrid(slice, payload, setControlValue) {
 }
 
 module.exports = {
-  default: deckGrid,
+  default: deckPath,
   getLayer,
 };
