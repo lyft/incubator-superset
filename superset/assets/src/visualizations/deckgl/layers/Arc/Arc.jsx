@@ -17,7 +17,7 @@ function getPoints(data) {
   return points;
 }
 
-function getLayer(fd, payload, slice) {
+export function getLayer(fd, payload, onAddFilter, setTooltip) {
   const data = payload.data.features;
   const sc = fd.color_picker;
   const tc = fd.target_color_picker;
@@ -27,7 +27,7 @@ function getLayer(fd, payload, slice) {
     getSourceColor: d => d.sourceColor || d.color || [sc.r, sc.g, sc.b, 255 * sc.a],
     getTargetColor: d => d.targetColor || d.color || [tc.r, tc.g, tc.b, 255 * tc.a],
     strokeWidth: (fd.stroke_width) ? fd.stroke_width : 3,
-    ...common.commonLayerProps(fd, slice),
+    ...commonLayerProps(fd, onAddFilter, setTooltip),
   });
 }
 
