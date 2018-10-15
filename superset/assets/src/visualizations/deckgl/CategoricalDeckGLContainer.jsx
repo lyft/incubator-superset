@@ -35,6 +35,8 @@ const propTypes = {
   viewport: PropTypes.object.isRequired,
   getLayer: PropTypes.func.isRequired,
   payload: PropTypes.object.isRequired,
+  onAddFilter: PropTypes.func,
+  setTooltip: PropTypes.func,
 };
 
 export default class CategoricalDeckGLContainer extends React.PureComponent {
@@ -89,9 +91,14 @@ export default class CategoricalDeckGLContainer extends React.PureComponent {
     this.setState({ viewport });
   }
   getLayers(values) {
-    const { getLayer, payload, slice } = this.props;
-    const fd = slice.formData;
-    let features = [...payload.data.features];
+    const {
+      getLayer,
+      payload,
+      formData: fd,
+      onAddFilter,
+      setTooltip,
+    } = this.props;
+    const data = [...payload.data.features];
 
     // Add colors from categories or fixed color
     features = this.addColor(features, fd);
@@ -114,12 +121,20 @@ export default class CategoricalDeckGLContainer extends React.PureComponent {
       features = features.filter(d => this.state.categories[d.cat_color].enabled);
     }
 
-    const filteredPayload = {
-      ...payload,
-      data: { ...payload.data, features },
-    };
-
-    return [getLayer(fd, filteredPayload, slice)];
+    payload.data.features = data;
+    return [getLayer(fd, payload, onAddFilter, setTooltip)];
+  }
+  addColor(data, fd) {
+    const c = fd.color_picker || { r: 0, g: 0, b: 0, a: 1 };
+    const colorFn = getScale(fd.color_scheme).toFunction();
+    return data.map((d) => {
+      let color;
+      if (fd.dimension) {
+        color = hexToRGB(colorFn(d.cat_color), c.a * 255);
+        return { ...d, color };
+      }
+      return d;
+    });
   }
   toggleCategory(category) {
     const categoryState = this.state.categories[category];

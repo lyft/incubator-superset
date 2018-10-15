@@ -7,7 +7,7 @@ import sandboxedEval from '../../../../modules/sandbox';
 import createAdaptor from '../../createAdaptor';
 import { createDeckGLComponent } from '../../factory';
 
-function getLayer(formData, payload, slice) {
+export function getLayer(formData, payload, onAddFilter, setTooltip) {
   const fd = formData;
   const c = fd.color_picker;
   let data = payload.data.features.map(d => ({
@@ -32,7 +32,7 @@ function getLayer(formData, payload, slice) {
     outline: false,
     getElevationValue: points => points.reduce((sum, point) => sum + point.weight, 0),
     getColorValue: points => points.reduce((sum, point) => sum + point.weight, 0),
-    ...common.commonLayerProps(fd, slice),
+    ...commonLayerProps(fd, onAddFilter, setTooltip),
   });
 }
 
