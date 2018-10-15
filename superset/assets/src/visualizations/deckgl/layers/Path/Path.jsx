@@ -7,7 +7,7 @@ import sandboxedEval from '../../../../modules/sandbox';
 import createAdaptor from '../../createAdaptor';
 import { createDeckGLComponent } from '../../factory';
 
-function getLayer(formData, payload, slice) {
+export function getLayer(formData, payload, onAddFilter, setTooltip) {
   const fd = formData;
   const c = fd.color_picker;
   const fixedColor = [c.r, c.g, c.b, 255 * c.a];
@@ -28,7 +28,7 @@ function getLayer(formData, payload, slice) {
     data,
     rounded: true,
     widthScale: 1,
-    ...common.commonLayerProps(fd, slice),
+    ...commonLayerProps(fd, onAddFilter, setTooltip),
   });
 }
 

@@ -58,7 +58,7 @@ const recurseGeoJson = (node, propOverrides, extraProps) => {
   }
 };
 
-function getLayer(formData, payload, slice) {
+export function getLayer(formData, payload, onAddFilter, setTooltip) {
   const fd = formData;
   const fc = fd.fill_color_picker;
   const sc = fd.stroke_color_picker;
@@ -89,21 +89,39 @@ function getLayer(formData, payload, slice) {
     stroked: fd.stroked,
     extruded: fd.extruded,
     pointRadiusScale: fd.point_radius_scale,
-    ...common.commonLayerProps(fd, slice),
+    ...commonLayerProps(fd, onAddFilter, setTooltip),
   });
 }
 
-function deckGeoJson(slice, payload, setControlValue) {
-  const layer = getLayer(slice.formData, payload, slice);
-  const viewport = {
-    ...slice.formData.viewport,
-    width: slice.width(),
-    height: slice.height(),
-  };
-  if (slice.formData.autozoom) {
-    // TODO get this to work
-    // viewport = common.fitViewport(viewport, geojsonExtent(payload.data.features));
-  }
+const propTypes = {
+  formData: PropTypes.object.isRequired,
+  payload: PropTypes.object.isRequired,
+  setControlValue: PropTypes.func.isRequired,
+  viewport: PropTypes.object.isRequired,
+  onAddFilter: PropTypes.func,
+  setTooltip: PropTypes.func,
+};
+const defaultProps = {
+  onAddFilter() {},
+  setTooltip() {},
+};
+
+function deckGeoJson(props) {
+  const {
+    formData,
+    payload,
+    setControlValue,
+    onAddFilter,
+    setTooltip,
+    viewport,
+  } = props;
+
+  // TODO get this to work
+  // if (formData.autozoom) {
+  //   viewport = common.fitViewport(viewport, geojsonExtent(payload.data.features));
+  // }
+
+  const layer = getLayer(formData, payload, onAddFilter, setTooltip);
 
   ReactDOM.render(
     <DeckGLContainer

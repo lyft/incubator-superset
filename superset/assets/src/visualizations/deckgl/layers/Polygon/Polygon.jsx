@@ -13,7 +13,7 @@ function getPoints(features) {
   return _.flatten(features.map(d => d.polygon), true);
 }
 
-function getLayer(formData, payload, slice) {
+export function getLayer(formData, payload, onAddFilter, setTooltip) {
   const fd = formData;
   const fc = fd.fill_color_picker;
   const sc = fd.stroke_color_picker;
@@ -47,7 +47,7 @@ function getLayer(formData, payload, slice) {
     getLineWidth: fd.line_width,
     extruded: fd.extruded,
     fp64: true,
-    ...common.commonLayerProps(fd, slice),
+    ...commonLayerProps(fd, onAddFilter, setTooltip),
   });
 }
 
