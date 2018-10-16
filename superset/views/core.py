@@ -2514,7 +2514,7 @@ class Superset(BaseSupersetView):
                     rendered_query,
                     return_results=False,
                     store_results=not query.select_as_cta,
-                    user_name=g.user.username)
+                    user_name=g.user.username if g.user else None)
             except Exception as e:
                 logging.exception(e)
                 msg = (
@@ -2545,7 +2545,8 @@ class Superset(BaseSupersetView):
                 data = sql_lab.get_sql_results(
                     query_id,
                     rendered_query,
-                    return_results=True)
+                    return_results=True,
+                    user_name=g.user.username if g.user else None)
             payload = json.dumps(
                 data,
                 default=utils.pessimistic_json_iso_dttm_ser,
