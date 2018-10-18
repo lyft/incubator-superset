@@ -9,7 +9,6 @@ import AnimatableDeckGLContainer from '../../AnimatableDeckGLContainer';
 import { getPlaySliderParams } from '../../../../modules/time';
 import sandboxedEval from '../../../../modules/sandbox';
 import { commonLayerProps, fitViewport } from '../common';
-import createAdaptor from '../../createAdaptor';
 
 function getPoints(data) {
   return data.map(d => d.position);
@@ -134,30 +133,4 @@ class DeckGLScreenGrid extends React.PureComponent {
 
 DeckGLScreenGrid.propTypes = propTypes;
 
-function deckScreenGrid(slice, payload, setControlValue) {
-  const fd = slice.formData;
-  let viewport = {
-    ...fd.viewport,
-    width: slice.width(),
-    height: slice.height(),
-  };
-
-  if (fd.autozoom) {
-    viewport = common.fitViewport(viewport, getPoints(payload.data.features));
-  }
-
-  ReactDOM.render(
-    <DeckGLScreenGrid
-      slice={slice}
-      payload={payload}
-      setControlValue={setControlValue}
-      viewport={viewport}
-    />,
-    document.getElementById(slice.containerId),
-  );
-}
-
-module.exports = {
-  default: deckScreenGrid,
-  getLayer,
-};
+export default DeckGLScreenGrid;

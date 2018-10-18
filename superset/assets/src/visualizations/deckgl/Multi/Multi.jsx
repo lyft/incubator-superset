@@ -4,7 +4,6 @@ import $ from 'jquery';
 import DeckGLContainer from '../DeckGLContainer';
 import { getExploreLongUrl } from '../../../explore/exploreUtils';
 import layerGenerators from '../layers';
-import createAdaptor from '../createAdaptor';
 
 const propTypes = {
   formData: PropTypes.object.isRequired,
@@ -88,12 +87,4 @@ function deckMulti(slice, payload, setControlValue) {
       },
     };
 
-    const url = getExploreLongUrl(subsliceCopy.form_data, 'json');
-    $.get(url, (data) => {
-      const layer = layerGenerators[subsliceCopy.form_data.viz_type](subsliceCopy.form_data, data);
-      subSlicesLayers[subsliceCopy.slice_id] = layer;
-      render();
-    });
-  });
-}
-module.exports = deckMulti;
+export default DeckMulti;
