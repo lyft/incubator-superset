@@ -4,7 +4,6 @@ import ReactDOM from 'react-dom';
 import { GridLayer } from 'deck.gl';
 import { commonLayerProps } from '../common';
 import sandboxedEval from '../../../../modules/sandbox';
-import createAdaptor from '../../createAdaptor';
 import { createDeckGLComponent } from '../../factory';
 
 export function getLayer(formData, payload, onAddFilter, setTooltip) {
@@ -39,31 +38,4 @@ function getPoints(data) {
   return data.map(d => d.position);
 }
 
-function deckGrid(slice, payload, setControlValue) {
-  const layer = getLayer(slice.formData, payload, slice);
-  let viewport = {
-    ...slice.formData.viewport,
-    width: slice.width(),
-    height: slice.height(),
-  };
-
-  if (slice.formData.autozoom) {
-    viewport = common.fitViewport(viewport, getPoints(payload.data.features));
-  }
-
-  ReactDOM.render(
-    <DeckGLContainer
-      mapboxApiAccessToken={payload.data.mapboxApiKey}
-      viewport={viewport}
-      layers={[layer]}
-      mapStyle={slice.formData.mapbox_style}
-      setControlValue={setControlValue}
-    />,
-    document.getElementById(slice.containerId),
-  );
-}
-
-module.exports = {
-  default: deckGrid,
-  getLayer,
-};
+export default createDeckGLComponent(getLayer, getPoints);

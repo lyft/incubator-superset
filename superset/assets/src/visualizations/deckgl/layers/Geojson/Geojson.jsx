@@ -7,7 +7,6 @@ import DeckGLContainer from '../../DeckGLContainer';
 import { hexToRGB } from '../../../../modules/colors';
 import sandboxedEval from '../../../../modules/sandbox';
 import { commonLayerProps } from '../common';
-import createAdaptor from '../../createAdaptor';
 
 const propertyMap = {
   fillColor: 'fillColor',
@@ -135,7 +134,7 @@ function deckGeoJson(props) {
   );
 }
 
-module.exports = {
-  default: deckGeoJson,
-  getLayer,
-};
+deckGeoJson.propTypes = propTypes;
+deckGeoJson.defaultProps = defaultProps;
+
+export default deckGeoJson;
