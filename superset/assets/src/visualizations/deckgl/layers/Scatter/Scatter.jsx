@@ -13,7 +13,7 @@ function getPoints(data) {
   return data.map(d => d.position);
 }
 
-function getLayer(fd, payload, slice) {
+export function getLayer(fd, payload, onAddFilter, setTooltip) {
   const dataWithRadius = payload.data.features.map((d) => {
     let radius = unitToRadius(fd.point_unit, d.radius) || 10;
     if (fd.multiplier) {
@@ -34,7 +34,7 @@ function getLayer(fd, payload, slice) {
     radiusMinPixels: fd.min_radius || null,
     radiusMaxPixels: fd.max_radius || null,
     outline: false,
-    ...common.commonLayerProps(fd, slice),
+    ...commonLayerProps(fd, setTooltip),
   });
 }
 

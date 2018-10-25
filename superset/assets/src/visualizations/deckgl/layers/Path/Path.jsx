@@ -27,7 +27,7 @@ export function getLayer(formData, payload, onAddFilter, setTooltip) {
     data,
     rounded: true,
     widthScale: 1,
-    ...commonLayerProps(fd, onAddFilter, setTooltip),
+    ...commonLayerProps(fd, setTooltip),
   });
 }
 
