@@ -1523,22 +1523,22 @@ export const controls = {
     description: t('Send filter events to other charts'),
   },
 
-  toggle_zipcodes: {
+  toggle_polygons: {
     type: 'CheckboxControl',
     label: t('Multiple filtering'),
     renderTrigger: true,
     default: true,
-    description: t('Allow sending multiple ZIP codes as a filter event'),
+    description: t('Allow sending multiple polygons as a filter event'),
   },
 
-  num_categories: {
+  num_buckets: {
     type: 'SelectControl',
     multi: false,
     freeForm: true,
-    label: t('Number of categories for legend'),
+    label: t('Number of buckets to group data'),
     default: 5,
     choices: formatSelectOptions([2, 3, 5, 10]),
-    description: t('How many categories should be shown in the legend.'),
+    description: t('How many buckets should the data be grouped in.'),
     renderTrigger: true,
   },
 
@@ -1546,9 +1546,9 @@ export const controls = {
     type: 'SelectControl',
     multi: true,
     freeForm: true,
-    label: t('Category break points'),
+    label: t('Bucket break points'),
     choices: formatSelectOptions([]),
-    description: t('List of values for categorizing metric.'),
+    description: t('List of n+1 values for bucketing metric into n buckets.'),
     renderTrigger: true,
   },
 

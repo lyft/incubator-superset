@@ -577,7 +577,7 @@ export const getColorFromScheme = (function () {
 }());
 
 export const colorScalerFactory = function (colors, data, accessor, extents, outputRGBA = false) {
-  // Returns a linear scaler our of an array of color
+  // Returns a linear scaler out of an array of color
   if (!Array.isArray(colors)) {
     /* eslint no-param-reassign: 0 */
     colors = spectrums[colors];
