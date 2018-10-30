@@ -62,15 +62,11 @@ const loadVis = promise =>
     // deckgl visualizations don't use esModules, fix it?
     return defaultExport.default || defaultExport;
   });
-<<<<<<< HEAD
-const loadNvd3 = () => loadVis(import(/* webpackChunkName: "nvd3_vis" */ './nvd3_vis.js'));
-=======
 
 const loadDeckGLVis = promise =>
   loadVis(promise).then(module => createAdaptor(module, transformProps));
 
 const loadNvd3 = () => loadVis(import(/* webpackChunkName: "nvd3_vis" */ './nvd3/adaptor.jsx'));
->>>>>>> d662e364... [Ready] Define ChartProps data structure (#6125)
 
 const vizMap = {
   [VIZ_TYPES.area]: loadNvd3,
