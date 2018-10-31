@@ -35,7 +35,7 @@ import sqlalchemy as sqla
 from sqlalchemy import select
 from sqlalchemy.engine import create_engine
 from sqlalchemy.engine.url import make_url
-from sqlalchemy.sql import text
+from sqlalchemy.sql import quoted_name, text
 from sqlalchemy.sql.expression import TextAsFrom
 import sqlparse
 from tableschema import Table
@@ -101,7 +101,7 @@ class BaseEngineSpec(object):
     time_secondary_columns = False
     inner_joins = True
     allows_subquery = True
-    consistent_case_sensitivity = True  # do results have same case as qry for col names?
+    force_column_alias_quotes = False
     arraysize = None
 
     @classmethod
@@ -235,7 +235,8 @@ class BaseEngineSpec(object):
     @classmethod
     @cache_util.memoized_func(
         timeout=600,
-        key=lambda *args, **kwargs: 'db:{}:{}'.format(args[0].id, args[1]))
+        key=lambda *args, **kwargs: 'db:{}:{}'.format(args[0].id, args[1]),
+        use_tables_cache=True)
     def fetch_result_sets(cls, db, datasource_type, force=False):
         """Returns the dictionary {schema : [result_set_name]}.
 
@@ -299,7 +300,21 @@ class BaseEngineSpec(object):
         pass
 
     @classmethod
-    def get_schema_names(cls, inspector):
+    @cache_util.memoized_func(
+        enable_cache=lambda *args, **kwargs: kwargs.get('enable_cache', False),
+        timeout=lambda *args, **kwargs: kwargs.get('cache_timeout'),
+        key=lambda *args, **kwargs: 'db:{}:schema_list'.format(kwargs.get('db_id')))
+    def get_schema_names(cls, inspector, db_id,
+                         enable_cache, cache_timeout, force=False):
+        """A function to get all schema names in this db.
+
+        :param inspector: URI string
+        :param db_id: database id
+        :param enable_cache: whether to enable cache for the function
+        :param cache_timeout: timeout settings for cache in second.
+        :param force: force to refresh
+        :return: a list of schema names
+        """
         return inspector.get_schema_names()
 
     @classmethod
@@ -370,61 +385,21 @@ class BaseEngineSpec(object):
         return {}
 
     @classmethod
-    def execute(cls, cursor, query, async=False):
+    def execute(cls, cursor, query, **kwargs):
         if cls.arraysize:
             cursor.arraysize = cls.arraysize
         cursor.execute(query)
 
     @classmethod
-    def adjust_df_column_names(cls, df, fd):
-        """Based of fields in form_data, return dataframe with new column names
-
-        Usually sqla engines return column names whose case matches that of the
-        original query. For example:
-            SELECT 1 as col1, 2 as COL2, 3 as Col_3
-        will usually result in the following df.columns:
-            ['col1', 'COL2', 'Col_3'].
-        For these engines there is no need to adjust the dataframe column names
-        (default behavior). However, some engines (at least Snowflake, Oracle and
-        Redshift) return column names with different case than in the original query,
-        usually all uppercase. For these the column names need to be adjusted to
-        correspond to the case of the fields specified in the form data for Viz
-        to work properly. This adjustment can be done here.
+    def make_label_compatible(cls, label):
         """
-        if cls.consistent_case_sensitivity:
-            return df
-        else:
-            return cls.align_df_col_names_with_form_data(df, fd)
-
-    @staticmethod
-    def align_df_col_names_with_form_data(df, fd):
-        """Helper function to rename columns that have changed case during query.
-
-        Returns a dataframe where column names have been adjusted to correspond with
-        column names in form data (case insensitive). Examples:
-        dataframe: 'col1', form_data: 'col1' -> no change
-        dataframe: 'COL1', form_data: 'col1' -> dataframe column renamed: 'col1'
-        dataframe: 'col1', form_data: 'Col1' -> dataframe column renamed: 'Col1'
+        Return a sqlalchemy.sql.elements.quoted_name if the engine requires
+        quoting of aliases to ensure that select query and query results
+        have same case.
         """
-
-        columns = set()
-        lowercase_mapping = {}
-
-        metrics = utils.get_metric_names(fd.get('metrics', []))
-        groupby = fd.get('groupby', [])
-        other_cols = [utils.DTTM_ALIAS]
-        for col in metrics + groupby + other_cols:
-            columns.add(col)
-            lowercase_mapping[col.lower()] = col
-
-        rename_cols = {}
-        for col in df.columns:
-            if col not in columns:
-                orig_col = lowercase_mapping.get(col.lower())
-                if orig_col:
-                    rename_cols[col] = orig_col
-
-        return df.rename(index=str, columns=rename_cols)
+        if cls.force_column_alias_quotes is True:
+            return quoted_name(label, True)
+        return label
 
     @staticmethod
     def mutate_expression_label(label):
@@ -478,7 +453,8 @@ class PostgresEngineSpec(PostgresBaseEngineSpec):
 
 class SnowflakeEngineSpec(PostgresBaseEngineSpec):
     engine = 'snowflake'
-    consistent_case_sensitivity = False
+    force_column_alias_quotes = True
+
     time_grain_functions = {
         None: '{col}',
         'PT1S': "DATE_TRUNC('SECOND', {col})",
@@ -515,13 +491,13 @@ class VerticaEngineSpec(PostgresBaseEngineSpec):
 
 class RedshiftEngineSpec(PostgresBaseEngineSpec):
     engine = 'redshift'
-    consistent_case_sensitivity = False
+    force_column_alias_quotes = True
 
 
 class OracleEngineSpec(PostgresBaseEngineSpec):
     engine = 'oracle'
     limit_method = LimitMethod.WRAP_SQL
-    consistent_case_sensitivity = False
+    force_column_alias_quotes = True
 
     time_grain_functions = {
         None: '{col}',
@@ -545,6 +521,7 @@ class OracleEngineSpec(PostgresBaseEngineSpec):
 class Db2EngineSpec(BaseEngineSpec):
     engine = 'ibm_db_sa'
     limit_method = LimitMethod.WRAP_SQL
+    force_column_alias_quotes = True
     time_grain_functions = {
         None: '{col}',
         'PT1S': 'CAST({col} as TIMESTAMP)'
@@ -600,7 +577,8 @@ class SqliteEngineSpec(BaseEngineSpec):
     @classmethod
     @cache_util.memoized_func(
         timeout=600,
-        key=lambda *args, **kwargs: 'db:{}:{}'.format(args[0].id, args[1]))
+        key=lambda *args, **kwargs: 'db:{}:{}'.format(args[0].id, args[1]),
+        use_tables_cache=True)
     def fetch_result_sets(cls, db, datasource_type, force=False):
         schemas = db.inspector.get_schema_names()
         result_sets = {}
@@ -750,7 +728,8 @@ class PrestoEngineSpec(BaseEngineSpec):
     @classmethod
     @cache_util.memoized_func(
         timeout=600,
-        key=lambda *args, **kwargs: 'db:{}:{}'.format(args[0].id, args[1]))
+        key=lambda *args, **kwargs: 'db:{}:{}'.format(args[0].id, args[1]),
+        use_tables_cache=True)
     def fetch_result_sets(cls, db, datasource_type, force=False):
         """Returns the dictionary {schema : [result_set_name]}.
 
@@ -1017,7 +996,8 @@ class HiveEngineSpec(PrestoEngineSpec):
     @classmethod
     @cache_util.memoized_func(
         timeout=600,
-        key=lambda *args, **kwargs: 'db:{}:{}'.format(args[0].id, args[1]))
+        key=lambda *args, **kwargs: 'db:{}:{}'.format(args[0].id, args[1]),
+        use_tables_cache=True)
     def fetch_result_sets(cls, db, datasource_type, force=False):
         return BaseEngineSpec.fetch_result_sets(
             db, datasource_type, force=force)
@@ -1276,8 +1256,9 @@ class HiveEngineSpec(PrestoEngineSpec):
         return configuration
 
     @staticmethod
-    def execute(cursor, query, async=False):
-        cursor.execute(query, async=async)
+    def execute(cursor, query, async_=False):
+        kwargs = {'async': async_}
+        cursor.execute(query, **kwargs)
 
 
 class MssqlEngineSpec(BaseEngineSpec):
@@ -1431,6 +1412,28 @@ class BQEngineSpec(BaseEngineSpec):
         return mutated_label
 
     @classmethod
+    def extra_table_metadata(cls, database, table_name, schema_name):
+        indexes = database.get_indexes(table_name, schema_name)
+        if not indexes:
+            return {}
+        partitions_columns = [
+            index.get('column_names', []) for index in indexes
+            if index.get('name') == 'partition'
+        ]
+        cluster_columns = [
+            index.get('column_names', []) for index in indexes
+            if index.get('name') == 'clustering'
+        ]
+        return {
+            'partitions': {
+                'cols': partitions_columns,
+            },
+            'clustering': {
+                'cols': cluster_columns,
+            },
+        }
+
+    @classmethod
     def _get_fields(cls, cols):
         """
         BigQuery dialect requires us to not use backtick in the fieldname which are
@@ -1472,7 +1475,12 @@ class ImpalaEngineSpec(BaseEngineSpec):
         return "'{}'".format(dttm.strftime('%Y-%m-%d %H:%M:%S'))
 
     @classmethod
-    def get_schema_names(cls, inspector):
+    @cache_util.memoized_func(
+        enable_cache=lambda *args, **kwargs: kwargs.get('enable_cache', False),
+        timeout=lambda *args, **kwargs: kwargs.get('cache_timeout'),
+        key=lambda *args, **kwargs: 'db:{}:schema_list'.format(kwargs.get('db_id')))
+    def get_schema_names(cls, inspector, db_id,
+                         enable_cache, cache_timeout, force=False):
         schemas = [row[0] for row in inspector.engine.execute('SHOW SCHEMAS')
                    if not row[0].startswith('_')]
         return schemas
