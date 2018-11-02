@@ -723,13 +723,13 @@ def to_adhoc(filt, expressionType='SIMPLE', clause='where'):
 
     if expressionType == 'SIMPLE':
         result.update({
-            'comparator': filt['val'],
-            'operator': filt['op'],
-            'subject': filt['col'],
+            'comparator': filt.get('val'),
+            'operator': filt.get('op'),
+            'subject': filt.get('col'),
         })
     elif expressionType == 'SQL':
         result.update({
-            'sqlExpression': filt[clause],
+            'sqlExpression': filt.get(clause),
         })
 
     return result
@@ -843,6 +843,7 @@ def get_or_create_main_db():
     dbobj.set_sqlalchemy_uri(conf.get('SQLALCHEMY_DATABASE_URI'))
     dbobj.expose_in_sqllab = True
     dbobj.allow_run_sync = True
+    dbobj.allow_csv_upload = True
     db.session.add(dbobj)
     db.session.commit()
     return dbobj
@@ -1016,3 +1017,7 @@ def get_username():
 
 def MediumText():
     return Text().with_variant(MEDIUMTEXT(), 'mysql')
+
+
+def shortid():
+    return '{}'.format(uuid.uuid4())[-12:]
