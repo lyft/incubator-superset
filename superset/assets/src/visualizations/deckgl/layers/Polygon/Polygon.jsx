@@ -61,7 +61,6 @@ export function getLayer(formData, payload, setTooltip, selected, onSelect, filt
   return new PolygonLayer({
     id: `path-layer-${fd.slice_id}`,
     data,
-    pickable: true,
     filled: fd.filled,
     stroked: fd.stroked,
     getPolygon: d => d.polygon,
@@ -96,7 +95,8 @@ class DeckGLPolygon extends React.PureComponent {
 
     const fd = props.formData;
     const timeGrain = fd.time_grain_sqla || fd.granularity || 'PT1M';
-    const timestamps = props.payload.data.features.map(f => f.__timestamp);
+    const features = props.payload.data.features || [];
+    const timestamps = features.map(f => f.__timestamp);
     const { start, end, getStep, values, disabled } = getPlaySliderParams(timestamps, timeGrain);
     this.state = {
       start,
