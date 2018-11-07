@@ -80,5 +80,15 @@ class Lyft(Superset):
             return json_error_response('{}'.format(e))
         return self.queries_call(last_updated_ms)
 
+    @has_access_api
+    @expose('/results/<key>')
+    @log_this
+    def results(self, key):
+        try:
+            self.authorize()
+        except (UserDontExistException, SupersetException) as e:
+            return json_error_response('{}'.format(e))
+        return self.results_call(key)
+
 
 appbuilder.add_view_no_menu(Lyft)
