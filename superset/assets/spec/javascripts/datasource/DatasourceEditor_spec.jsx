@@ -8,6 +8,7 @@ import $ from 'jquery';
 import sinon from 'sinon';
 
 import DatasourceEditor from '../../../src/datasource/DatasourceEditor';
+import Field from '../../../src/CRUD/Field';
 import mockDatasource from '../../fixtures/mockDatasource';
 
 const props = {

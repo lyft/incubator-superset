@@ -307,9 +307,13 @@ commands are invoked.
 
 We use [Mocha](https://mochajs.org/), [Chai](http://chaijs.com/) and [Enzyme](http://airbnb.io/enzyme/) to test Javascript. Tests can be run with:
 
-    cd /superset/superset/assets/javascripts
-    npm i
-    npm run test
+```bash
+cd superset/assets/spec
+npm install
+npm run test
+```
+
+### Integration testing
 
 ## Linting
 
