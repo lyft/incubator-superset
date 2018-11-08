@@ -6,7 +6,7 @@ import TooltipWrapper from './TooltipWrapper';
 
 import './ObjectTags.css';
 
-import { t } from '../locales';
+import { t } from '@superset-ui/translation';
 
 const propTypes = {
   fetchTags: PropTypes.func,

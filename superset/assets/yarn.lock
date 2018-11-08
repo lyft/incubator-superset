@@ -3101,6 +3101,11 @@ class-utils@^0.3.5:
     isobject "^3.0.0"
     static-extend "^0.1.1"
 
+classnames@2.2.5:
+  version "2.2.5"
+  resolved "https://registry.yarnpkg.com/classnames/-/classnames-2.2.5.tgz#fb3801d453467649ef3603c7d61a02bd129bde6d"
+  integrity sha1-+zgB1FNGdknvNgPH1hoCvRKb3m0=
+
 classnames@^2.2.3, classnames@^2.2.4, classnames@^2.2.5:
   version "2.2.6"
   resolved "https://registry.yarnpkg.com/classnames/-/classnames-2.2.6.tgz#43935bffdd291f326dad0a205309b38d00f650ce"
@@ -10784,6 +10789,14 @@ react-bootstrap-slider@2.1.5:
     bootstrap-slider "9.9.0"
     es6bindall "^0.0.9"
 
+react-bootstrap-table-next@^1.4.0:
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/react-bootstrap-table-next/-/react-bootstrap-table-next-1.4.0.tgz#e52392029d7028f1d5a0e0c382da17cb9f6273a9"
+  integrity sha512-iamA6w6psG/2hX78vnYcBOp0a8oqYkDorScIeGScqIMuNSElGC4m/7J4zoQzpmVRT4B8UlxRqmBrHafexU3Rpw==
+  dependencies:
+    classnames "2.2.5"
+    underscore "1.9.1"
+
 react-bootstrap@^0.31.5:
   version "0.31.5"
   resolved "https://registry.yarnpkg.com/react-bootstrap/-/react-bootstrap-0.31.5.tgz#57040fa8b1274e1e074803c21a1b895fdabea05a"
@@ -13292,7 +13305,7 @@ uncontrollable@^4.1.0:
   dependencies:
     invariant "^2.1.0"
 
-underscore@^1.8.3:
+underscore@1.9.1, underscore@^1.8.3:
   version "1.9.1"
   resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.9.1.tgz#06dce34a0e68a7babc29b365b8e74b8925203961"
   integrity sha512-5/4etnCkd9c8gwgowi5/om/mYO5ajCaOgdzj/oW+0eQV9WxKBDZw5+ycmKmeaTXjInS/W0BzpGLo2xR2aBwZdg==

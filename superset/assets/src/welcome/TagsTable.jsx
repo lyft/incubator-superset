@@ -7,7 +7,7 @@ import 'whatwg-fetch';
 import { fetchObjects } from '../tags';
 import Loading from '../components/Loading';
 import '../../stylesheets/reactable-pagination.css';
-import { t } from '../locales';
+import { t } from '@superset-ui/translation';
 
 const propTypes = {
   search: PropTypes.string,
