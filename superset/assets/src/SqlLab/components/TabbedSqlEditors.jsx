@@ -4,16 +4,18 @@ import { DropdownButton, MenuItem, Tab, Tabs } from 'react-bootstrap';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import URI from 'urijs';
+import { t } from '@superset-ui/translation';
 
-import * as Actions from '../actions';
+import * as Actions from '../actions/sqlLab';
 import SqlEditor from './SqlEditor';
 import { areArraysShallowEqual } from '../../reduxUtils';
-import { t } from '../../locales';
 import TabStatusIcon from './TabStatusIcon';
 
 const propTypes = {
   actions: PropTypes.object.isRequired,
   defaultDbId: PropTypes.number,
+  defaultQueryLimit: PropTypes.number.isRequired,
+  maxRow: PropTypes.number.isRequired,
   databases: PropTypes.object.isRequired,
   queries: PropTypes.object.isRequired,
   queryEditors: PropTypes.array,
@@ -212,6 +214,8 @@ class TabbedSqlEditors extends React.PureComponent {
                   database={database}
                   actions={this.props.actions}
                   hideLeftBar={this.state.hideLeftBar}
+                  defaultQueryLimit={this.props.defaultQueryLimit}
+                  maxRow={this.props.maxRow}
                 />
               )}
             </div>
@@ -243,7 +247,7 @@ class TabbedSqlEditors extends React.PureComponent {
 TabbedSqlEditors.propTypes = propTypes;
 TabbedSqlEditors.defaultProps = defaultProps;
 
-function mapStateToProps({ sqlLab }) {
+function mapStateToProps({ sqlLab, common }) {
   return {
     databases: sqlLab.databases,
     queryEditors: sqlLab.queryEditors,
@@ -252,6 +256,8 @@ function mapStateToProps({ sqlLab }) {
     tables: sqlLab.tables,
     defaultDbId: sqlLab.defaultDbId,
     offline: sqlLab.offline,
+    defaultQueryLimit: common.conf.DEFAULT_SQLLAB_LIMIT,
+    maxRow: common.conf.SQL_MAX_ROW,
   };
 }
 function mapDispatchToProps(dispatch) {

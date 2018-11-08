@@ -1,8 +1,6 @@
-/* eslint global-require: 0 */
-import { SupersetClient } from '@superset-ui/core';
-import { t } from '../locales';
-
-const d3 = require('d3');
+import d3 from 'd3';
+import { SupersetClient } from '@superset-ui/connection';
+import getClientErrorObject from './getClientErrorObject';
 
 export const EARTH_CIRCUMFERENCE_KM = 40075.16;
 export const LUMINANCE_RED_WEIGHT = 0.2126;
@@ -66,7 +64,11 @@ export function getShortUrl(longUrl) {
     postPayload: { data: `/${longUrl}` }, // note: url should contain 2x '/' to redirect properly
     parseMethod: 'text',
     stringify: false, // the url saves with an extra set of string quotes without this
-  }).then(({ text }) => text);
+  })
+    .then(({ text }) => text)
+    .catch(response =>
+      getClientErrorObject(response)
+        .then(({ error, statusText }) => Promise.reject(error || statusText)));
 }
 
 export function supersetURL(rootUrl, getParams = {}) {
@@ -112,8 +114,3 @@ export function optionFromValue(opt) {
   // From a list of options, handles special values & labels
   return { value: optionValue(opt), label: optionLabel(opt) };
 }
-
-// Error messages used in many places across applications
-export const COMMON_ERR_MESSAGES = {
-  SESSION_TIMED_OUT: t('Your session timed out, please refresh your page and try again.'),
-};

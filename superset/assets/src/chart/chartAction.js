@@ -1,12 +1,13 @@
 /* global window, AbortController */
 /* eslint no-undef: 'error' */
-import { SupersetClient } from '@superset-ui/core';
+/* eslint no-param-reassign: ["error", { "props": false }] */
+import { t } from '@superset-ui/translation';
+import { SupersetClient } from '@superset-ui/connection';
 import { getExploreUrlAndPayload, getAnnotationJsonUrl } from '../explore/exploreUtils';
 import { requiresQuery, ANNOTATION_SOURCE_TYPES } from '../modules/AnnotationTypes';
 import { addDangerToast } from '../messageToasts/actions';
 import { Logger, LOG_ACTIONS_LOAD_CHART } from '../logger';
-import { getClientErrorObject } from '../modules/utils';
-import { t } from '../locales';
+import getClientErrorObject from '../utils/getClientErrorObject';
 
 export const CHART_UPDATE_STARTED = 'CHART_UPDATE_STARTED';
 export function chartUpdateStarted(queryController, latestQueryFormData, key) {
@@ -66,7 +67,8 @@ export function annotationQueryFailed(annotation, queryResponse, key) {
 export function runAnnotationQuery(annotation, timeout = 60, formData = null, key) {
   return function (dispatch, getState) {
     const sliceKey = key || Object.keys(getState().charts)[0];
-    const fd = formData || getState().charts[sliceKey].latestQueryFormData;
+    // make a copy of formData, not modifying original formData
+    const fd = { ...(formData || getState().charts[sliceKey].latestQueryFormData) };
 
     if (!requiresQuery(annotation.sourceType)) {
       return Promise.resolve();
@@ -75,7 +77,13 @@ export function runAnnotationQuery(annotation, timeout = 60, formData = null, ke
     const granularity = fd.time_grain_sqla || fd.granularity;
     fd.time_grain_sqla = granularity;
     fd.granularity = granularity;
-
+    const overridesKeys = Object.keys(annotation.overrides);
+    if (overridesKeys.includes('since') || overridesKeys.includes('until')) {
+      annotation.overrides = {
+        ...annotation.overrides,
+        time_range: null,
+      };
+    }
     const sliceFormData = Object.keys(annotation.overrides).reduce(
       (d, k) => ({
         ...d,
@@ -96,15 +104,16 @@ export function runAnnotationQuery(annotation, timeout = 60, formData = null, ke
       timeout: timeout * 1000,
     })
       .then(({ json }) => dispatch(annotationQuerySuccess(annotation, json, sliceKey)))
-      .catch((err) => {
+      .catch(response => getClientErrorObject(response).then((err) => {
         if (err.statusText === 'timeout') {
           dispatch(annotationQueryFailed(annotation, { error: 'Query Timeout' }, sliceKey));
-        } else if ((err.responseJSON.error || '').toLowerCase().includes('no data')) {
+        } else if ((err.error || '').toLowerCase().includes('no data')) {
           dispatch(annotationQuerySuccess(annotation, err, sliceKey));
         } else if (err.statusText !== 'abort') {
-          dispatch(annotationQueryFailed(annotation, err.responseJSON, sliceKey));
+          dispatch(annotationQueryFailed(annotation, err, sliceKey));
         }
-      });
+      }),
+    );
   };
 }
 
