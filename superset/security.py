@@ -22,6 +22,14 @@ READ_ONLY_MODEL_VIEWS = {
     'DruidClusterModelView',
 }
 
+USER_MODEL_VIEWS = {
+    'UserDBModelView',
+    'UserLDAPModelView',
+    'UserOAuthModelView',
+    'UserOIDModelView',
+    'UserRemoteUserModelView',
+}
+
 GAMMA_READ_ONLY_MODEL_VIEWS = {
     'SqlMetricInlineView',
     'TableColumnInlineView',
@@ -40,12 +48,7 @@ ADMIN_ONLY_VIEW_MENUS = {
     'ResetPasswordView',
     'RoleModelView',
     'Security',
-    'UserDBModelView',
-    'UserLDAPModelView',
-    'UserOAuthModelView',
-    'UserOIDModelView',
-    'UserRemoteUserModelView',
-}
+} | USER_MODEL_VIEWS
 
 ALPHA_ONLY_VIEW_MENUS = {
     'Upload a CSV',
@@ -183,10 +186,12 @@ class SupersetSecurityManager(SecurityManager):
                     datasource_perms.add(perm.view_menu.name)
         return datasource_perms
 
-    def schemas_accessible_by_user(self, database, schemas):
+    def schemas_accessible_by_user(self, database, schemas, hierarchical=True):
         from superset import db
         from superset.connectors.sqla.models import SqlaTable
-        if self.database_access(database) or self.all_datasource_access():
+        if (hierarchical and
+                (self.database_access(database) or
+                 self.all_datasource_access())):
             return schemas
 
         subset = set()
@@ -377,7 +382,9 @@ class SupersetSecurityManager(SecurityManager):
             pvm.permission.name in {
                 'can_sql_json', 'can_csv', 'can_search_queries', 'can_sqllab_viz',
                 'can_sqllab',
-            })
+            } or
+            (pvm.view_menu.name in USER_MODEL_VIEWS and
+             pvm.permission.name == 'can_list'))
 
     def is_granter_pvm(self, pvm):
         return pvm.permission.name in {

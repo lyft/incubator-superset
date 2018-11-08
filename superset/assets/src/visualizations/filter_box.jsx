@@ -228,9 +228,6 @@ FilterBox.propTypes = propTypes;
 FilterBox.defaultProps = defaultProps;
 
 function filterBox(slice, payload) {
-  const d3token = d3.select(slice.selector);
-  d3token.selectAll('*').remove();
-
   // filter box should ignore the dashboard's filters
   // const url = slice.jsonEndpoint({ extraFilters: false });
   const fd = slice.formData;
