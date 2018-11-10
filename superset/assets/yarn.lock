@@ -422,9 +422,9 @@
 
 "@superset-ui/core@^0.3.0":
   version "0.3.0"
-  resolved "https://registry.yarnpkg.com/@superset-ui/core/-/core-0.3.0.tgz#99b5281457201eb9781eab71ac8189a5ce3ccce4"
+  resolved "https://registry.yarnpkg.com/@superset-ui/translation/-/translation-0.3.0.tgz#e0c1737739f61bcdaf5c5b15a80ceecc38a50e52"
   dependencies:
-    lodash "^4.17.11"
+    jed "^1.1.1"
 
 "@superset-ui/core@^0.7.0":
   version "0.7.0"
@@ -12113,7 +12113,11 @@ whatwg-encoding@^1.0.1, whatwg-encoding@^1.0.3:
   dependencies:
     iconv-lite "0.4.24"
 
-whatwg-fetch@>=0.10.0, whatwg-fetch@^2.0.4:
+whatwg-fetch@>=0.10.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/whatwg-fetch/-/whatwg-fetch-3.0.0.tgz#fc804e458cc460009b1a2b966bc8817d2578aefb"
+
+whatwg-fetch@^2.0.4:
   version "2.0.4"
   resolved "http://registry.npmjs.org/whatwg-fetch/-/whatwg-fetch-2.0.4.tgz#dde6a5df315f9d39991aa17621853d720b85566f"
 
