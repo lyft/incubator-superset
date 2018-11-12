@@ -55,6 +55,28 @@ class Chart extends React.PureComponent {
     }
   }
 
+  setTooltip(tooltip) {
+    this.setState({ tooltip });
+  }
+
+  handleAddFilter(col, vals, merge = true, refresh = true) {
+    this.props.addFilter(col, vals, merge, refresh);
+  }
+
+  handleRenderSuccess() {
+    const { actions, chartStatus, chartId, vizType } = this.props;
+    if (['loading', 'rendered'].indexOf(chartStatus) < 0) {
+      actions.chartRenderingSucceeded(chartId);
+    }
+
+    Logger.append(LOG_ACTIONS_RENDER_CHART, {
+      slice_id: chartId,
+      viz_type: vizType,
+      start_offset: this.renderStartTime,
+      duration: Logger.getTimestamp() - this.renderStartTime,
+    });
+  }
+
   handleRenderFailure(error, info) {
     const { actions, chartId } = this.props;
     console.warn(error); // eslint-disable-line
