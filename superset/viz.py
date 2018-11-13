@@ -2338,7 +2338,8 @@ def geohash_to_json(geohash_code):
 def zipcode_deser(zipcodes):
     geojson = zipcodes_to_json(zipcodes)
     def deser(zipcode):
-        return geojson[str(zipcode)]['coordinates'][0]
+        if str(zipcode) in geojson:
+            return geojson[str(zipcode)]['coordinates'][0]
     return deser
 
 
