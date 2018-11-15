@@ -6,7 +6,7 @@ import sandboxedEval from '../../../modules/sandbox';
 
 export function getBounds(points) {
   const latExt = d3array.extent(points, d => d ? d[1] : null);
-  const lngExt = d3array.extent(points, d => d? d[0] : null);
+  const lngExt = d3array.extent(points, d => d ? d[0] : null);
   return [
     [lngExt[0], latExt[0]],
     [lngExt[1], latExt[1]],
@@ -45,12 +45,15 @@ export function commonLayerProps(formData, setTooltip, onSelect) {
       fd.line_type === 'fsa'
     )
   ) {
-    tooltipContentGenerator = o => (
-      <div>
-        <div>{fd.line_column}: <strong>{o.object[fd.line_column]}</strong></div>
-        {fd.metric &&
-          <div>{fd.metric}: <strong>{o.object[fd.metric]}</strong></div>}
-      </div>);
+    if (fd.metric) {
+      const metricLabel = fd.metric.label || fd.metric;
+      tooltipContentGenerator = o => (
+        <div>
+          <div>{fd.line_column}: <strong>{o.object[fd.line_column]}</strong></div>
+          {fd.metric &&
+            <div>{metricLabel}: <strong>{o.object[metricLabel]}</strong></div>}
+        </div>);
+    }
   }
   if (tooltipContentGenerator) {
     onHover = (o) => {
