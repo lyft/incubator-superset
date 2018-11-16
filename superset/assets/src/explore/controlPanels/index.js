@@ -62,6 +62,7 @@ import TimeTable from './TimeTable';
 import Treemap from './Treemap';
 import WordCloud from './WordCloud';
 import WorldMap from './WorldMap';
+import Kepler from './Kepler';
 import DeckArc from './DeckArc';
 import DeckGeojson from './DeckGeojson';
 import DeckGrid from './DeckGrid';
@@ -112,6 +113,7 @@ export const controlPanelConfigs = {
   treemap: Treemap,
   word_cloud: WordCloud,
   world_map: WorldMap,
+  kepler: Kepler,
   deck_arc: DeckArc,
   deck_geojson: DeckGeojson,
   deck_grid: DeckGrid,
