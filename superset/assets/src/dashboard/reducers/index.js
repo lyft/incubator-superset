@@ -1,4 +1,5 @@
 import { combineReducers } from 'redux';
+import keplerGlReducer from 'kepler.gl/reducers';
 
 import charts from '../../chart/chartReducer';
 import dashboardState from './dashboardState';
@@ -19,4 +20,5 @@ export default combineReducers({
   impressionId,
   messageToasts,
   sliceEntities,
+  keplerGl: keplerGlReducer,
 });

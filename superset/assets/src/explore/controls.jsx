@@ -1301,6 +1301,14 @@ export const controls = {
     default: '',
   },
 
+  config: {
+    type: 'TextAreaControl',
+    renderTrigger: true,
+    language: 'json',
+    label: t('Config'),
+    default: '',
+  },
+
   pandas_aggfunc: {
     type: 'SelectControl',
     label: t('Aggregation function'),

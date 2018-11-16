@@ -1,4 +1,5 @@
 import { combineReducers } from 'redux';
+import keplerGlReducer from 'kepler.gl/reducers';
 
 import charts from '../../chart/chartReducer';
 import saveModal from './saveModalReducer';
@@ -13,4 +14,5 @@ export default combineReducers({
   explore,
   impressionId,
   messageToasts,
+  keplerGl: keplerGlReducer,
 });
