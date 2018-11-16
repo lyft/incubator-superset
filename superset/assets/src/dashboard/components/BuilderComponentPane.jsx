@@ -27,14 +27,6 @@ import InsertComponentPane, {
 } from './InsertComponentPane';
 import ColorComponentPane from './ColorComponentPane';
 import { BUILDER_PANE_TYPE } from '../util/constants';
-import NewColumn from './gridComponents/new/NewColumn';
-import NewDivider from './gridComponents/new/NewDivider';
-import NewHeader from './gridComponents/new/NewHeader';
-import NewRow from './gridComponents/new/NewRow';
-import NewTabs from './gridComponents/new/NewTabs';
-import NewTags from './gridComponents/new/NewTags';
-import NewMarkdown from './gridComponents/new/NewMarkdown';
-import SliceAdder from '../containers/SliceAdder';
 
 const propTypes = {
   topOffset: PropTypes.number,
@@ -74,7 +66,6 @@ class BuilderComponentPane extends React.PureComponent {
                     className="viewport"
                     style={isSticky ? { ...style, top: topOffset } : null}
                   >
-<<<<<<< HEAD
                     {builderPaneType === BUILDER_PANE_TYPE.ADD_COMPONENTS && (
                       <InsertComponentPane
                         height={height}
@@ -91,59 +82,6 @@ class BuilderComponentPane extends React.PureComponent {
                         colorScheme={colorScheme}
                       />
                     )}
-=======
-                    <div
-                      className={cx(
-                        'slider-container',
-                        this.state.slideDirection,
-                      )}
-                    >
-                      <div className="component-layer slide-content">
-                        <div className="dashboard-builder-sidepane-header">
-                          <span>{t('Insert components')}</span>
-                          <i
-                            className="fa fa-times trigger"
-                            onClick={this.props.toggleBuilderPane}
-                            role="none"
-                          />
-                        </div>
-                        <div
-                          className="new-component static"
-                          role="none"
-                          onClick={this.openSlicesPane}
-                        >
-                          <div className="new-component-placeholder fa fa-area-chart" />
-                          <div className="new-component-label">
-                            {t('Your charts & filters')}
-                          </div>
-
-                          <i className="fa fa-arrow-right trigger" />
-                        </div>
-                        <NewTabs />
-                        <NewRow />
-                        <NewColumn />
-                        <NewHeader />
-                        <NewMarkdown />
-                        <NewDivider />
-                        <NewTags />
-                      </div>
-                      <div className="slices-layer slide-content">
-                        <div
-                          className="dashboard-builder-sidepane-header"
-                          onClick={this.closeSlicesPane}
-                          role="none"
-                        >
-                          <i className="fa fa-arrow-left trigger" />
-                          <span>{t('Your charts and filters')}</span>
-                        </div>
-                        <SliceAdder
-                          height={
-                            height + (isSticky ? SUPERSET_HEADER_HEIGHT : 0)
-                          }
-                        />
-                      </div>
-                    </div>
->>>>>>> e3a562176... Landing Page (frontend only)
                   </div>
                 )}
               </Sticky>
