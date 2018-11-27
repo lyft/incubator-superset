@@ -76,23 +76,18 @@ class ExploreChartHeader extends React.PureComponent {
       slice_name: newTitle,
       action: isNewSlice ? 'saveas' : 'overwrite',
     };
-    this.props.actions.saveSlice(this.props.form_data, params).then((data) => {
-      if (isNewSlice) {
-        this.props.actions.createNewSlice(
-          data.can_add,
-          data.can_download,
-          data.can_overwrite,
-          data.slice,
-          data.form_data,
-        );
-        this.props.addHistory({
-          isReplace: true,
-          title: `[chart] ${data.slice.slice_name}`,
-        });
-      } else {
-        this.props.actions.updateChartTitle(newTitle);
-      }
-    });
+    this.props.actions.saveSlice(this.props.form_data, params)
+      .then((json) => {
+        const { data } = json;
+        if (isNewSlice) {
+          this.props.actions.createNewSlice(
+            data.can_add, data.can_download, data.can_overwrite,
+            data.slice, data.form_data);
+          this.props.addHistory({ isReplace: true, title: `[chart] ${data.slice.slice_name}` });
+        } else {
+          this.props.actions.updateChartTitle(newTitle);
+        }
+      });
   }
 
   renderChartTitle() {
