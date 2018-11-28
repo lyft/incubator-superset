@@ -21,6 +21,7 @@ from superset.utils.core import (
     QueryStatus,
     zlib_compress,
 )
+from superset.utils.lyft import log_query
 
 config = app.config
 celery_app = get_celery_app(config)
@@ -180,6 +181,13 @@ def execute_sql(
         logging.info('Running query: \n{}'.format(executed_sql))
         logging.info(query.executed_sql)
         query_start_time = now_as_float()
+        log_query(
+            query.database.sqlalchemy_uri,
+            query.executed_sql,
+            query.schema,
+            user_name,
+            'superset.sql_lab',
+        )
         db_engine_spec.execute(cursor, query.executed_sql, async_=True)
         logging.info('Handling cursor')
         db_engine_spec.handle_cursor(cursor, query, session)

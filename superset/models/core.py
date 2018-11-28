@@ -37,6 +37,7 @@ from superset.utils import (
     cache as cache_util,
     core as utils,
 )
+from superset.utils.lyft import log_query
 from superset.viz import viz_types
 from urllib import parse  # noqa
 
@@ -801,12 +802,27 @@ class Database(Model, AuditMixinNullable, ImportMixin):
                 return True
             return False
 
+        username = utils.get_username() or 'service-not-logged-in'
         with closing(engine.raw_connection()) as conn:
             with closing(conn.cursor()) as cursor:
                 for sql in sqls[:-1]:
+                    log_query(
+                        engine.url,
+                        sql,
+                        schema,
+                        username,
+                        'superset.models.core',
+                    )
                     self.db_engine_spec.execute(cursor, sql)
                     cursor.fetchall()
 
+                log_query(
+                    engine.url,
+                    sqls[-1],
+                    schema,
+                    username,
+                    'superset.models.core',
+                )
                 self.db_engine_spec.execute(cursor, sqls[-1])
 
                 if cursor.description is not None:
