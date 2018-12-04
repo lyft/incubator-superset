@@ -3,6 +3,8 @@ import { scaleThreshold } from 'd3-scale';
 import { getSequentialSchemeRegistry, SequentialScheme } from '@superset-ui/color';
 import { hexToRGB } from '../../modules/colors';
 
+const DEFAULT_NUM_BUCKETS = 10;
+
 export function getBreakPoints({
     break_points: formDataBreakPoints,
     num_buckets: formDataNumBuckets,
@@ -12,7 +14,7 @@ export function getBreakPoints({
   }
   if (formDataBreakPoints === undefined || formDataBreakPoints.length === 0) {
     // compute evenly distributed break points based on number of buckets
-    const numBuckets = formDataNumBuckets ? parseInt(formDataNumBuckets, 10) : 10;
+    const numBuckets = formDataNumBuckets ? parseInt(formDataNumBuckets, 10) : DEFAULT_NUM_BUCKETS;
     const [minValue, maxValue] = extent(features, accessor);
     const delta = (maxValue - minValue) / numBuckets;
     const precision = delta === 0

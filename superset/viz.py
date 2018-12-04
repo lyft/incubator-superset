@@ -491,7 +491,7 @@ class BaseViz(object):
         return df.to_csv(index=include_index, **config.get('CSV_EXPORT'))
 
     def get_data(self, df):
-        return self.get_df().to_dict(orient='records')
+        return df.to_dict(orient='records')
 
     @property
     def json_data(self):
@@ -1474,7 +1474,6 @@ class HistogramViz(BaseViz):
             keys = (keys,)
         # removing undesirable characters
         labels = [re.sub(r'\W+', r'_', k) for k in keys]
-        print(self.columns)
         if len(self.columns) > 1 or not self.groupby:
             # Only show numeric column in label if there are many
             labels = [column] + labels

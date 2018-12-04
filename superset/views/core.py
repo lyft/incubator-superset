@@ -143,10 +143,10 @@ class DatabaseView(SupersetModelView, DeleteMixin, YamlExportMixin):  # noqa
 
     list_columns = [
         'database_name', 'backend', 'allow_run_sync', 'allow_run_async',
-        'allow_dml', 'allow_csv_upload', 'creator', 'modified']
+        'allow_dml', 'allow_csv_upload', 'expose_in_sqllab', 'creator', 'modified']
     order_columns = [
         'database_name', 'allow_run_sync', 'allow_run_async', 'allow_dml',
-        'modified', 'allow_csv_upload',
+        'modified', 'allow_csv_upload', 'expose_in_sqllab',
     ]
     add_columns = [
         'database_name', 'sqlalchemy_uri', 'cache_timeout', 'expose_in_sqllab',
@@ -911,9 +911,8 @@ class Superset(BaseSupersetView):
             for r in session.query(DAR).all():
                 datasource = ConnectorRegistry.get_datasource(
                     r.datasource_type, r.datasource_id, session)
-                user = security_manager.get_user_by_id(r.created_by_fk)
                 if not datasource or \
-                   security_manager.datasource_access(datasource, user):
+                   security_manager.datasource_access(datasource):
                     # datasource does not exist anymore
                     session.delete(r)
             session.commit()
@@ -1127,7 +1126,7 @@ class Superset(BaseSupersetView):
             form_data=form_data,
             force=force,
         )
-        security_manager.assert_datasource_permission(viz_obj.datasource, g.user)
+        security_manager.assert_datasource_permission(viz_obj.datasource)
 
         if csv:
             return CsvResponse(
@@ -1645,7 +1644,6 @@ class Superset(BaseSupersetView):
     @staticmethod
     def _set_dash_metadata(dashboard, data):
         positions = data['positions']
-
         # find slices in the position data
         slice_ids = []
         slice_id_to_name = {}

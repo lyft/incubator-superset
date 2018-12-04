@@ -15,16 +15,18 @@ from superset import app, dataframe, db, results_backend, security_manager
 from superset.models.sql_lab import Query
 from superset.sql_parse import SupersetQuery
 from superset.utils.core import (
-    get_celery_app,
+    # get_celery_app,
     json_iso_dttm_ser,
     now_as_float,
     QueryStatus,
     zlib_compress,
 )
+
 from superset.utils.lyft import log_query
+from superset.tasks.celery_app import app as celery_app
 
 config = app.config
-celery_app = get_celery_app(config)
+# celery_app = get_celery_app(config)
 stats_logger = app.config.get('STATS_LOGGER')
 SQLLAB_TIMEOUT = config.get('SQLLAB_ASYNC_TIME_LIMIT_SEC', 600)
 
@@ -77,7 +79,9 @@ def session_scope(nullpool):
         session.close()
 
 
-@celery_app.task(bind=True, soft_time_limit=SQLLAB_TIMEOUT)
+@celery_app.task(name='sql_lab.get_sql_results',
+                 bind=True,
+                 soft_time_limit=SQLLAB_TIMEOUT)
 def get_sql_results(
     ctask, query_id, rendered_query, return_results=True, store_results=False,
         user_name=None, start_time=None):
