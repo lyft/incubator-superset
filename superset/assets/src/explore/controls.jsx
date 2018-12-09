@@ -415,6 +415,14 @@ export const controls = {
     description: t('When checked, the map will zoom to your data after each query'),
   },
 
+  readonly: {
+    type: 'CheckboxControl',
+    label: t('Read Only Mode'),
+    default: false,
+    renderTrigger: true,
+    description: t('Whether to show/hide the left panel'),
+  },
+
   show_perc: {
     type: 'CheckboxControl',
     label: t('Show percentage'),

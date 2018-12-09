@@ -14,9 +14,9 @@ export default {
     },
     {
       label: t('Advanced'),
-      expanded: false,
+      expanded: true,
       controlSetRows: [
-        ['autozoom', ],
+        ['autozoom', 'readonly'],
         ['config'],
       ],
     },

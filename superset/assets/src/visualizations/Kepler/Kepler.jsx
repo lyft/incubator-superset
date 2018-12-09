@@ -14,10 +14,12 @@ import './Kepler.css';
 const propTypes = {
   height: PropTypes.number,
   setControlValue: PropTypes.func,
+  readonly: PropTypes.boolean,
 };
 const reducers = combineReducers({
   // <-- mount kepler.gl reducer in your app
   keplerGl: keplerGlReducer,
+  readonly: false,
 });
 
 class Kepler extends React.PureComponent {
@@ -43,12 +45,15 @@ class Kepler extends React.PureComponent {
       const { keplerGl } = this.props;
       return KeplerGlSchema.getConfigToSave(keplerGl[this.state.keplerId]);
     } catch (e) {
-      return {};
+      return null;
     }
   }
   setMapConfig() {
     const { setControlValue } = this.props;
-    setControlValue('config', JSON.stringify(this.getCurrentConfig(), null, 2));
+    const config = this.getCurrentConfig();
+    if (config) {
+      setControlValue('config', JSON.stringify(this.getCurrentConfig(), null, 2));
+    }
   }
   addDataToMap(props, useControlConfig = true) {
     let config = props.config;
@@ -65,7 +70,11 @@ class Kepler extends React.PureComponent {
         label: 'Superset Data',
       },
     }];
-    const options = { centerMap: this.props.autozoom };
+    const options = { readOnly: this.props.readonly };
+    if (this.props.autozoom) {
+      options.centerMap = true;
+      config.config.mapState = {};
+    }
     props.dispatch(addDataToMap({ datasets, config, options }));
   }
   render() {
