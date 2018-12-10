@@ -1503,6 +1503,13 @@ class DruidEngineSpec(BaseEngineSpec):
     }
 
 
+class GSheetsEngineSpec(SqliteEngineSpec):
+    """Engine for Google spreadsheets"""
+    engine = 'gsheets'
+    inner_joins = False
+    allows_subquery = False
+
+
 class KylinEngineSpec(BaseEngineSpec):
     """Dialect for Apache Kylin"""
 
