@@ -1066,8 +1066,7 @@ class HiveEngineSpec(PrestoEngineSpec):
         schema_definition = ', '.join(column_name_and_type)
 
         s3 = boto3.client('s3')
-        location = os.path.join('s3a://', bucket_path,
-                                upload_prefix, table_name)
+        location = os.path.join('s3a://', bucket_path, upload_prefix, table_name)
         s3.upload_file(
             upload_path, bucket_path,
             os.path.join(upload_prefix, table_name, filename))
