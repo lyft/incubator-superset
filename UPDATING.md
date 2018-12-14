@@ -3,6 +3,10 @@
 This file documents any backwards-incompatible changes in Superset and
 assists people when migrating to a new version.
 
+## Superset 0.29.0
+* India was removed from the "Country Map" visualization as the geojson
+  file included in the package was very large
+
 ## Superset 0.28.0
 * Support for Python 2 is deprecated, we only support >=3.6 from
   `0.28.0` onwards
@@ -19,7 +23,7 @@ assists people when migrating to a new version.
 * Superset 0.28 upgrades `flask-login` to `>=0.3`, which includes a
     backwards-incompatible change: `g.user.is_authenticated`,
     `g.user.is_anonymous`, and `g.user.is_active` are now properties
-    instead of properties.
+    instead of methods.
 
 ## Superset 0.27.0
 * Superset 0.27 start to use nested layout for dashboard builder, which is not

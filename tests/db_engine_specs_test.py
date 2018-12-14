@@ -1,12 +1,6 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import inspect
 
-from six import text_type
+import mock
 
 from superset import db_engine_specs
 from superset.db_engine_specs import (
@@ -103,8 +97,7 @@ class DbEngineSpecsTestCase(SupersetTestCase):
 
         e = Exception("Some string that doesn't match the regex")
         self.assertEquals(
-            text_type(e),
-            HiveEngineSpec.extract_error_message(e))
+            str(e), HiveEngineSpec.extract_error_message(e))
 
         msg = (
             'errorCode=10001, '
@@ -293,3 +286,9 @@ class DbEngineSpecsTestCase(SupersetTestCase):
                 defined_time_grains = {grain.duration for grain in cls.get_time_grains()}
                 intersection = time_grains.intersection(defined_time_grains)
                 self.assertSetEqual(defined_time_grains, intersection, cls_name)
+
+    def test_presto_get_view_names_return_empty_list(self):
+        self.assertEquals([], PrestoEngineSpec.get_view_names(mock.ANY, mock.ANY))
+
+    def test_hive_get_view_names_return_empty_list(self):
+        self.assertEquals([], HiveEngineSpec.get_view_names(mock.ANY, mock.ANY))

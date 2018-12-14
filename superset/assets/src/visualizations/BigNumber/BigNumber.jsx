@@ -2,8 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import shortid from 'shortid';
 import { XYChart, AreaSeries, CrossHair, LinearGradient } from '@data-ui/xy-chart';
-import { brandColor } from '../../modules/colors';
-import { formatDateVerbose } from '../../modules/dates';
+import { BRAND_COLOR } from '@superset-ui/color';
+import { smartDateVerboseFormatter } from '@superset-ui/time-format';
 import { computeMaxFontSize } from '../../modules/visUtils';
 
 import './BigNumber.css';
@@ -26,7 +26,7 @@ const PROPORTION = {
 export function renderTooltipFactory(formatValue) {
   return function renderTooltip({ datum }) { // eslint-disable-line
     const { x: rawDate, y: rawValue } = datum;
-    const formattedDate = formatDateVerbose(rawDate);
+    const formattedDate = smartDateVerboseFormatter(rawDate);
     const value = formatValue(rawValue);
 
     return (
@@ -63,11 +63,11 @@ const defaultProps = {
   showTrendLine: false,
   startYAxisAtZero: true,
   trendLineData: null,
-  mainColor: brandColor,
+  mainColor: BRAND_COLOR,
   renderTooltip: renderTooltipFactory(identity),
 };
 
-class BigNumberVis extends React.Component {
+class BigNumberVis extends React.PureComponent {
   constructor(props) {
     super(props);
     this.gradientId = shortid.generate();
