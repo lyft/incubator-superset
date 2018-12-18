@@ -1,7 +1,7 @@
 """empty message
 
 Revision ID: 4ce8df208545
-Revises: 55e910a74826
+Revises: 750a37bd94c9
 Create Date: 2018-11-12 13:31:07.578090
 
 """
@@ -20,7 +20,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from superset import db
 
 revision = '4ce8df208545'
-down_revision = '55e910a74826'
+down_revision = '750a37bd94c9'
 
 Base = declarative_base()
 
