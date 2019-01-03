@@ -2255,6 +2255,7 @@ export const controls = {
       ['json', 'JSON'],
       ['geohash', 'geohash (square)'],
       ['zipcode', 'ZIP code'],
+      ['fsa', 'FSA'],
     ],
   },
 
