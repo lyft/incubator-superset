@@ -2095,6 +2095,8 @@ class BaseDeckGLViz(BaseViz):
             return [spatial.get('geohashCol')]
         elif spatial.get('type') == 'zipcode':
             return [spatial.get('zipcodeCol')]
+        elif spatial.get('type') == 'fsa':
+            return [spatial.get('fsaCol')]
 
     @staticmethod
     def parse_coordinates(s):
@@ -2116,6 +2118,11 @@ class BaseDeckGLViz(BaseViz):
     def reverse_zipcode_decode(zipcode):
         raise NotImplementedError(
             'No mapping from ZIP code to single latitude/longitude')
+
+    @staticmethod
+    def reverse_fsa_decode(fsa):
+        raise NotImplementedError(
+            'No mapping from FSA code to single latitude/longitude')
 
     @staticmethod
     def reverse_latlong(df, key):
@@ -2145,6 +2152,9 @@ class BaseDeckGLViz(BaseViz):
         elif spatial.get('type') == 'zipcode':
             df[key] = df[spatial.get('zipcodeCol')].map(self.reverse_zipcode_decode)
             del df[spatial.get('zipcodeCol')]
+        elif spatial.get('type') == 'fsa':
+            df[key] = df[spatial.get('fsaCol')].map(self.reverse_fsa_decode)
+            del df[spatial.get('fsaCol')]
 
         if spatial.get('reverseCheckbox'):
             self.reverse_latlong(df, key)
@@ -2343,6 +2353,13 @@ def zipcode_deser(zipcodes):
     return deser
 
 
+def fsa_deser(fsas):
+    geojson = fsas_to_json(fsas)
+    def deser(fsa):
+        return geojson[fsa][0][0][0]
+    return deser
+
+
 def zipcodes_to_json(zipcodes):
     user = os.environ.get('CREDENTIALS_LYFTPG_USER', '')
     password = os.environ.get('CREDENTIALS_LYFTPG_PASSWORD', '')
@@ -2386,6 +2403,42 @@ def zipcodes_to_json(zipcodes):
     return out
 
 
+def fsas_to_json(fsas):
+    url = 'presto://prestoproxy.lyft.net:8443/hive'
+
+    out = {}
+    missing = set()
+    for fsa in fsas:
+        cache_key = 'fsa_geojson_{}'.format(fsa)
+        geojson = cache and cache.get(cache_key)
+        if geojson:
+            out[fsa] = geojson
+        else:
+            missing.add(fsa)
+
+    if not missing:
+        return out
+
+    # fetch missing geojson from lyftpg
+    in_clause = ', '.join(['%s'] * len(missing))
+    query = (
+        'SELECT fsa, geo_json FROM jbridgem.test_geo_json_fsa WHERE fsa IN ({0})'
+        .format(in_clause))
+    conn = sqlalchemy.create_engine(url, connect_args={'protocol': 'https'})
+    results = conn.execute(query, tuple(missing)).fetchall()
+
+    for fsa, geojson in results:
+        out[fsa] = json.loads(geojson)
+        if cache and len(results) < 10000:  # avoid storing too much
+            cache_key = 'fsa_geojson_{}'.format(fsa)
+            try:
+                cache.set(cache_key, geojson, timeout=86400)
+            except Exception:
+                pass
+
+    return out
+
+
 class DeckPathViz(BaseDeckGLViz):
 
     """deck.gl's PathLayer"""
@@ -2399,6 +2452,7 @@ class DeckPathViz(BaseDeckGLViz):
         'polyline': polyline.decode,
         'geohash': geohash_to_json,
         'zipcode': None,  # per request
+        'fsa': None,  # per request
     }
 
     def query_obj(self):
@@ -2424,7 +2478,7 @@ class DeckPathViz(BaseDeckGLViz):
         if fd.get('reverse_long_lat'):
             path = [(o[1], o[0]) for o in path]
         d[self.deck_viz_key] = path
-        if line_type not in ['geohash', 'zipcode']:
+        if line_type not in ['geohash', 'zipcode', 'fsa']:
             del d[line_column]
         d['__timestamp'] = d.get(DTTM_ALIAS) or d.get('__time')
         return d
@@ -2435,6 +2489,9 @@ class DeckPathViz(BaseDeckGLViz):
         if line_type == 'zipcode':
             zipcodes = df[fd['line_column']].unique()
             self.deser_map['zipcode'] = zipcode_deser(zipcodes)
+        elif line_type == 'fsa':
+            fsas = df[fd['line_column']].unique()
+            self.deser_map['fsa'] = fsa_deser(fsas)
 
         self.metric_label = self.get_metric_label(self.metric)
         return super(DeckPathViz, self).get_data(df)
