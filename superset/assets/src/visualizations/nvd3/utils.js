@@ -3,6 +3,8 @@ import d3tip from 'd3-tip';
 import dompurify from 'dompurify';
 import { formatDateVerbose } from '../../modules/dates';
 
+const MAX_LABEL_LENGTH = 24;
+
 // Regexp for the label added to time shifted series
 // (1 hour offset, 2 days offset, etc.)
 const TIME_SHIFT_PATTERN = /\d+ \w+ offset/;
@@ -215,4 +217,10 @@ export function setAxisShowMaxMin(axis, showminmax) {
   if (axis && axis.showMaxMin && showminmax !== undefined) {
     axis.showMaxMin(showminmax);
   }
+}
+
+export function truncateLabel(text) {
+  return text.length > MAX_LABEL_LENGTH
+    ? text.substr(0, MAX_LABEL_LENGTH - 1) + '…'
+    : text;
 }
