@@ -74,7 +74,11 @@ class SavedQueryView(SupersetModelView, DeleteMixin):
 
 
 class SavedQueryViewApi(SavedQueryView):
-    show_columns = ['label', 'db_id', 'schema', 'description', 'sql']
+    list_columns = [
+        'label', 'sqlalchemy_uri', 'user_email', 'schema', 'description',
+        'sql', 'extra_json']
+    show_columns = [
+        'label', 'db_id', 'schema', 'description', 'sql', 'extra_json']
     add_columns = show_columns
     edit_columns = add_columns
 
