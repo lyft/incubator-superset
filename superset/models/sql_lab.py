@@ -123,7 +123,7 @@ class Query(Model, ExtraJSONMixin):
         return 'sqllab_{tab}_{ts}'.format(**locals())
 
 
-class SavedQuery(Model, AuditMixinNullable):
+class SavedQuery(Model, AuditMixinNullable, ExtraJSONMixin):
     """ORM model for SQL query"""
 
     __tablename__ = 'saved_query'
@@ -160,3 +160,11 @@ class SavedQuery(Model, AuditMixinNullable):
 sqla.event.listen(SavedQuery, 'after_insert', QueryUpdater.after_insert)
 sqla.event.listen(SavedQuery, 'after_update', QueryUpdater.after_update)
 sqla.event.listen(SavedQuery, 'after_delete', QueryUpdater.after_delete)
+
+    @property
+    def user_email(self):
+        return self.user.email
+
+    @property
+    def sqlalchemy_uri(self):
+        return self.database.sqlalchemy_uri
