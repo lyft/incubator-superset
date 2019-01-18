@@ -123,7 +123,7 @@ class Query(Model, ExtraJSONMixin):
         return f'sqllab_{tab}_{ts}'
 
 
-class SavedQuery(Model, AuditMixinNullable):
+class SavedQuery(Model, AuditMixinNullable, ExtraJSONMixin):
     """ORM model for SQL query"""
 
     __tablename__ = 'saved_query'
@@ -154,6 +154,13 @@ class SavedQuery(Model, AuditMixinNullable):
     @property
     def url(self):
         return '/superset/sqllab?savedQueryId={0}'.format(self.id)
+
+    def user_email(self):
+        return self.user.email
+
+    @property
+    def sqlalchemy_uri(self):
+        return self.database.sqlalchemy_uri
 
 
 # events for updating tags
