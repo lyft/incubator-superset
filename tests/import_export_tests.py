@@ -1,29 +1,37 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 """Unit tests for Superset"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+import json
+import unittest
 
 from sqlalchemy.orm.session import make_transient
 
-import json
-import pickle
-import unittest
-
 from superset import db
-from superset.models import core as models
 from superset.connectors.druid.models import (
-    DruidDatasource, DruidColumn, DruidMetric)
-from superset.connectors.sqla.models import SqlaTable, TableColumn, SqlMetric
-
+    DruidColumn, DruidDatasource, DruidMetric,
+)
+from superset.connectors.sqla.models import SqlaTable, SqlMetric, TableColumn
+from superset.models import core as models
+from superset.utils import core as utils
 from .base_tests import SupersetTestCase
 
 
 class ImportExportTests(SupersetTestCase):
     """Testing export import functionality for dashboards"""
-
-    def __init__(self, *args, **kwargs):
-        super(ImportExportTests, self).__init__(*args, **kwargs)
 
     @classmethod
     def delete_imports(cls):
@@ -46,6 +54,7 @@ class ImportExportTests(SupersetTestCase):
     @classmethod
     def setUpClass(cls):
         cls.delete_imports()
+        cls.create_druid_test_objects()
 
     @classmethod
     def tearDownClass(cls):
@@ -60,9 +69,9 @@ class ImportExportTests(SupersetTestCase):
             'database_name': db_name,
             'schema': '',
             # Test for trailing commas
-            "metrics": [
-                "sum__signup_attempt_email",
-                "sum__signup_attempt_facebook",
+            'metrics': [
+                'sum__signup_attempt_email',
+                'sum__signup_attempt_facebook',
             ],
         }
 
@@ -77,7 +86,7 @@ class ImportExportTests(SupersetTestCase):
             viz_type='bubble',
             params=json.dumps(params),
             datasource_id=ds_id,
-            id=id
+            id=id,
         )
 
     def create_dashboard(self, title, id=0, slcs=[]):
@@ -88,7 +97,7 @@ class ImportExportTests(SupersetTestCase):
             slices=slcs,
             position_json='{"size_y": 2, "size_x": 2}',
             slug='{}_imported'.format(title.lower()),
-            json_metadata=json.dumps(json_metadata)
+            json_metadata=json.dumps(json_metadata),
         )
 
     def create_table(
@@ -98,7 +107,7 @@ class ImportExportTests(SupersetTestCase):
             id=id,
             schema=schema,
             table_name=name,
-            params=json.dumps(params)
+            params=json.dumps(params),
         )
         for col_name in cols_names:
             table.columns.append(
@@ -114,7 +123,7 @@ class ImportExportTests(SupersetTestCase):
             id=id,
             datasource_name=name,
             cluster_name='druid_test',
-            params=json.dumps(params)
+            params=json.dumps(params),
         )
         for col_name in cols_names:
             datasource.columns.append(
@@ -136,7 +145,8 @@ class ImportExportTests(SupersetTestCase):
             id=dash_id).first()
 
     def get_dash_by_slug(self, dash_slug):
-        return db.session.query(models.Dashboard).filter_by(
+        sesh = db.session()
+        return sesh.query(models.Dashboard).filter_by(
             slug=dash_slug).first()
 
     def get_datasource(self, datasource_id):
@@ -155,9 +165,9 @@ class ImportExportTests(SupersetTestCase):
         self.assertEquals(
             len(expected_dash.slices), len(actual_dash.slices))
         expected_slices = sorted(
-            expected_dash.slices, key=lambda s: s.slice_name)
+            expected_dash.slices, key=lambda s: s.slice_name or '')
         actual_slices = sorted(
-            actual_dash.slices, key=lambda s: s.slice_name)
+            actual_dash.slices, key=lambda s: s.slice_name or '')
         for e_slc, a_slc in zip(expected_slices, actual_slices):
             self.assert_slice_equals(e_slc, a_slc)
         if check_position:
@@ -191,7 +201,10 @@ class ImportExportTests(SupersetTestCase):
             set([m.metric_name for m in actual_ds.metrics]))
 
     def assert_slice_equals(self, expected_slc, actual_slc):
-        self.assertEquals(expected_slc.slice_name, actual_slc.slice_name)
+        # to avoid bad slice data (no slice_name)
+        expected_slc_name = expected_slc.slice_name or ''
+        actual_slc_name = actual_slc.slice_name or ''
+        self.assertEquals(expected_slc_name, actual_slc_name)
         self.assertEquals(
             expected_slc.datasource_type, actual_slc.datasource_type)
         self.assertEquals(expected_slc.viz_type, actual_slc.viz_type)
@@ -199,47 +212,70 @@ class ImportExportTests(SupersetTestCase):
             json.loads(expected_slc.params), json.loads(actual_slc.params))
 
     def test_export_1_dashboard(self):
+        self.login('admin')
         birth_dash = self.get_dash_by_slug('births')
         export_dash_url = (
-            '/dashboardmodelview/export_dashboards_form?id={}&action=go'
+            '/dashboard/export_dashboards_form?id={}&action=go'
             .format(birth_dash.id)
         )
         resp = self.client.get(export_dash_url)
-        exported_dashboards = pickle.loads(resp.data)['dashboards']
+        exported_dashboards = json.loads(
+            resp.data.decode('utf-8'),
+            object_hook=utils.decode_dashboards,
+        )['dashboards']
+
+        birth_dash = self.get_dash_by_slug('births')
         self.assert_dash_equals(birth_dash, exported_dashboards[0])
         self.assertEquals(
             birth_dash.id,
-            json.loads(exported_dashboards[0].json_metadata)['remote_id'])
+            json.loads(
+                exported_dashboards[0].json_metadata,
+                object_hook=utils.decode_dashboards,
+            )['remote_id'])
 
-        exported_tables = pickle.loads(resp.data)['datasources']
+        exported_tables = json.loads(
+            resp.data.decode('utf-8'),
+            object_hook=utils.decode_dashboards,
+        )['datasources']
         self.assertEquals(1, len(exported_tables))
         self.assert_table_equals(
             self.get_table_by_name('birth_names'), exported_tables[0])
 
     def test_export_2_dashboards(self):
+        self.login('admin')
         birth_dash = self.get_dash_by_slug('births')
         world_health_dash = self.get_dash_by_slug('world_health')
         export_dash_url = (
-            '/dashboardmodelview/export_dashboards_form?id={}&id={}&action=go'
+            '/dashboard/export_dashboards_form?id={}&id={}&action=go'
             .format(birth_dash.id, world_health_dash.id))
         resp = self.client.get(export_dash_url)
-        exported_dashboards = sorted(pickle.loads(resp.data)['dashboards'],
-                                     key=lambda d: d.dashboard_title)
+        exported_dashboards = sorted(
+            json.loads(
+                resp.data.decode('utf-8'),
+                object_hook=utils.decode_dashboards,
+            )['dashboards'],
+            key=lambda d: d.dashboard_title)
         self.assertEquals(2, len(exported_dashboards))
+
+        birth_dash = self.get_dash_by_slug('births')
         self.assert_dash_equals(birth_dash, exported_dashboards[0])
         self.assertEquals(
             birth_dash.id,
-            json.loads(exported_dashboards[0].json_metadata)['remote_id']
+            json.loads(exported_dashboards[0].json_metadata)['remote_id'],
         )
 
+        world_health_dash = self.get_dash_by_slug('world_health')
         self.assert_dash_equals(world_health_dash, exported_dashboards[1])
         self.assertEquals(
             world_health_dash.id,
-            json.loads(exported_dashboards[1].json_metadata)['remote_id']
+            json.loads(exported_dashboards[1].json_metadata)['remote_id'],
         )
 
         exported_tables = sorted(
-            pickle.loads(resp.data)['datasources'], key=lambda t: t.table_name)
+            json.loads(
+                resp.data.decode('utf-8'),
+                object_hook=utils.decode_dashboards)['datasources'],
+            key=lambda t: t.table_name)
         self.assertEquals(2, len(exported_tables))
         self.assert_table_equals(
             self.get_table_by_name('birth_names'), exported_tables[0])
@@ -247,8 +283,8 @@ class ImportExportTests(SupersetTestCase):
             self.get_table_by_name('wb_health_population'), exported_tables[1])
 
     def test_import_1_slice(self):
-        expected_slice = self.create_slice('Import Me', id=10001);
-        slc_id = models.Slice.import_obj(expected_slice, import_time=1989)
+        expected_slice = self.create_slice('Import Me', id=10001)
+        slc_id = models.Slice.import_obj(expected_slice, None, import_time=1989)
         slc = self.get_slice(slc_id)
         self.assertEquals(slc.datasource.perm, slc.perm)
         self.assert_slice_equals(expected_slice, slc)
@@ -260,9 +296,9 @@ class ImportExportTests(SupersetTestCase):
         table_id = self.get_table_by_name('wb_health_population').id
         # table_id != 666, import func will have to find the table
         slc_1 = self.create_slice('Import Me 1', ds_id=666, id=10002)
-        slc_id_1 = models.Slice.import_obj(slc_1)
+        slc_id_1 = models.Slice.import_obj(slc_1, None)
         slc_2 = self.create_slice('Import Me 2', ds_id=666, id=10003)
-        slc_id_2 = models.Slice.import_obj(slc_2)
+        slc_id_2 = models.Slice.import_obj(slc_2, None)
 
         imported_slc_1 = self.get_slice(slc_id_1)
         imported_slc_2 = self.get_slice(slc_id_2)
@@ -277,17 +313,19 @@ class ImportExportTests(SupersetTestCase):
     def test_import_slices_for_non_existent_table(self):
         with self.assertRaises(IndexError):
             models.Slice.import_obj(self.create_slice(
-                'Import Me 3', id=10004, table_name='non_existent'))
+                'Import Me 3', id=10004, table_name='non_existent'), None)
 
     def test_import_slices_override(self):
         slc = self.create_slice('Import Me New', id=10005)
-        slc_1_id = models.Slice.import_obj(slc, import_time=1990)
+        slc_1_id = models.Slice.import_obj(slc, None, import_time=1990)
         slc.slice_name = 'Import Me New'
+        imported_slc_1 = self.get_slice(slc_1_id)
+        slc_2 = self.create_slice('Import Me New', id=10005)
         slc_2_id = models.Slice.import_obj(
-            self.create_slice('Import Me New', id=10005), import_time=1990)
+            slc_2, imported_slc_1, import_time=1990)
         self.assertEquals(slc_1_id, slc_2_id)
-        imported_slc = self.get_slice(slc_2_id)
-        self.assert_slice_equals(slc, imported_slc)
+        imported_slc_2 = self.get_slice(slc_2_id)
+        self.assert_slice_equals(slc, imported_slc_2)
 
     def test_import_empty_dashboard(self):
         empty_dash = self.create_dashboard('empty_dashboard', id=10001)
@@ -302,13 +340,18 @@ class ImportExportTests(SupersetTestCase):
         dash_with_1_slice = self.create_dashboard(
             'dash_with_1_slice', slcs=[slc], id=10002)
         dash_with_1_slice.position_json = """
-            [{{
-                "col": 5,
-                "row": 10,
-                "size_x": 4,
-                "size_y": 2,
-                "slice_id": "{}"
-            }}]
+            {{"DASHBOARD_VERSION_KEY": "v2",
+              "DASHBOARD_CHART_TYPE-{0}": {{
+                "type": "DASHBOARD_CHART_TYPE",
+                "id": {0},
+                "children": [],
+                "meta": {{
+                  "width": 4,
+                  "height": 50,
+                  "chartId": {0}
+                }}
+              }}
+            }}
         """.format(slc.id)
         imported_dash_id = models.Dashboard.import_obj(
             dash_with_1_slice, import_time=1990)
@@ -319,13 +362,11 @@ class ImportExportTests(SupersetTestCase):
         make_transient(expected_dash)
         self.assert_dash_equals(
             expected_dash, imported_dash, check_position=False)
-        self.assertEquals({"remote_id": 10002, "import_time": 1990},
+        self.assertEquals({'remote_id': 10002, 'import_time': 1990},
                           json.loads(imported_dash.json_metadata))
 
-        expected_position = dash_with_1_slice.position_array
-        expected_position[0]['slice_id'] = '{}'.format(
-            imported_dash.slices[0].id)
-        self.assertEquals(expected_position, imported_dash.position_array)
+        expected_position = dash_with_1_slice.position
+        self.assertEquals(expected_position, imported_dash.position)
 
     def test_import_dashboard_2_slices(self):
         e_slc = self.create_slice('e_slc', id=10007, table_name='energy_usage')
@@ -333,12 +374,12 @@ class ImportExportTests(SupersetTestCase):
         dash_with_2_slices = self.create_dashboard(
             'dash_with_2_slices', slcs=[e_slc, b_slc], id=10003)
         dash_with_2_slices.json_metadata = json.dumps({
-            "remote_id": 10003,
-            "filter_immune_slices": ["{}".format(e_slc.id)],
-            "expanded_slices": {
-                "{}".format(e_slc.id): True,
-                "{}".format(b_slc.id): False
-            }
+            'remote_id': 10003,
+            'filter_immune_slices': ['{}'.format(e_slc.id)],
+            'expanded_slices': {
+                '{}'.format(e_slc.id): True,
+                '{}'.format(b_slc.id): False,
+            },
         })
 
         imported_dash_id = models.Dashboard.import_obj(
@@ -353,13 +394,13 @@ class ImportExportTests(SupersetTestCase):
         i_e_slc = self.get_slice_by_name('e_slc')
         i_b_slc = self.get_slice_by_name('b_slc')
         expected_json_metadata = {
-            "remote_id": 10003,
-            "import_time": 1991,
-            "filter_immune_slices": ["{}".format(i_e_slc.id)],
-            "expanded_slices": {
+            'remote_id': 10003,
+            'import_time': 1991,
+            'filter_immune_slices': ['{}'.format(i_e_slc.id)],
+            'expanded_slices': {
                 '{}'.format(i_e_slc.id): True,
-                '{}'.format(i_b_slc.id): False
-            }
+                '{}'.format(i_b_slc.id): False,
+            },
         }
         self.assertEquals(expected_json_metadata,
                           json.loads(imported_dash.json_metadata))
@@ -391,7 +432,7 @@ class ImportExportTests(SupersetTestCase):
         imported_dash = self.get_dash(imported_dash_id_2)
         self.assert_dash_equals(
             expected_dash, imported_dash, check_position=False)
-        self.assertEquals({"remote_id": 10004, "import_time": 1992},
+        self.assertEquals({'remote_id': 10004, 'import_time': 1992},
                           json.loads(imported_dash.json_metadata))
 
     def test_import_table_no_metadata(self):
@@ -403,7 +444,7 @@ class ImportExportTests(SupersetTestCase):
     def test_import_table_1_col_1_met(self):
         table = self.create_table(
             'table_1_col_1_met', id=10002,
-            cols_names=["col1"], metric_names=["metric1"])
+            cols_names=['col1'], metric_names=['metric1'])
         imported_id = SqlaTable.import_obj(table, import_time=1990)
         imported = self.get_table(imported_id)
         self.assert_table_equals(table, imported)
@@ -439,7 +480,7 @@ class ImportExportTests(SupersetTestCase):
             cols_names=['col1', 'new_col1', 'col2', 'col3'])
         self.assert_table_equals(expected_table, imported_over)
 
-    def test_import_table_override_idential(self):
+    def test_import_table_override_identical(self):
         table = self.create_table(
             'copy_cat', id=10004, cols_names=['new_col1', 'col2', 'col3'],
             metric_names=['new_metric1'])
@@ -464,7 +505,7 @@ class ImportExportTests(SupersetTestCase):
     def test_import_druid_1_col_1_met(self):
         datasource = self.create_druid_datasource(
             'druid_1_col_1_met', id=10002,
-            cols_names=["col1"], metric_names=["metric1"])
+            cols_names=['col1'], metric_names=['metric1'])
         imported_id = DruidDatasource.import_obj(
             datasource, import_time=1990)
         imported = self.get_datasource(imported_id)
@@ -485,13 +526,12 @@ class ImportExportTests(SupersetTestCase):
 
     def test_import_druid_override(self):
         datasource = self.create_druid_datasource(
-            'druid_override', id=10003, cols_names=['col1'],
+            'druid_override', id=10004, cols_names=['col1'],
             metric_names=['m1'])
         imported_id = DruidDatasource.import_obj(
             datasource, import_time=1991)
-
         table_over = self.create_druid_datasource(
-            'druid_override', id=10003,
+            'druid_override', id=10004,
             cols_names=['new_col1', 'col2', 'col3'],
             metric_names=['new_metric1'])
         imported_over_id = DruidDatasource.import_obj(
@@ -500,19 +540,19 @@ class ImportExportTests(SupersetTestCase):
         imported_over = self.get_datasource(imported_over_id)
         self.assertEquals(imported_id, imported_over.id)
         expected_datasource = self.create_druid_datasource(
-            'druid_override', id=10003, metric_names=['new_metric1', 'm1'],
+            'druid_override', id=10004, metric_names=['new_metric1', 'm1'],
             cols_names=['col1', 'new_col1', 'col2', 'col3'])
         self.assert_datasource_equals(expected_datasource, imported_over)
 
-    def test_import_druid_override_idential(self):
+    def test_import_druid_override_identical(self):
         datasource = self.create_druid_datasource(
-            'copy_cat', id=10004, cols_names=['new_col1', 'col2', 'col3'],
+            'copy_cat', id=10005, cols_names=['new_col1', 'col2', 'col3'],
             metric_names=['new_metric1'])
         imported_id = DruidDatasource.import_obj(
             datasource, import_time=1993)
 
         copy_datasource = self.create_druid_datasource(
-            'copy_cat', id=10004, cols_names=['new_col1', 'col2', 'col3'],
+            'copy_cat', id=10005, cols_names=['new_col1', 'col2', 'col3'],
             metric_names=['new_metric1'])
         imported_id_copy = DruidDatasource.import_obj(
             copy_datasource, import_time=1994)

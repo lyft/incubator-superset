@@ -1,10 +1,23 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+# pylint: disable=C,R,W
 """Code related with dealing with legacy / change management"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import re
+
 from superset import frontend_config
 
 FORM_DATA_KEY_WHITELIST = list(frontend_config.get('controls').keys()) + ['slice_id']
@@ -15,7 +28,7 @@ def cast_filter_data(form_data):
     flts = []
     having_flts = []
     fd = form_data
-    filter_pattern = re.compile(r'''((?:[^,"']|"[^"]*"|'[^']*')+)''')
+    filter_pattern = re.compile(r"""((?:[^,"']|"[^"]*"|'[^']*')+)""")
     for i in range(0, 10):
         for prefix in ['flt', 'having']:
             col_str = '{}_col_{}'.format(prefix, i)
@@ -79,3 +92,12 @@ def cast_form_data(form_data):
         if k not in FORM_DATA_KEY_WHITELIST:
             del d[k]
     return d
+
+
+def update_time_range(form_data):
+    """Move since and until to time_range."""
+    if 'since' in form_data or 'until' in form_data:
+        form_data['time_range'] = '{} : {}'.format(
+            form_data.pop('since', '') or '',
+            form_data.pop('until', '') or '',
+        )

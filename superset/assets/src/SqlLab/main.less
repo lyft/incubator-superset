@@ -1,0 +1,333 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+@import "../../stylesheets/less/cosmo/variables.less";
+body {
+    overflow: hidden;
+}
+.inlineBlock {
+    display: inline-block;
+}
+.valignTop {
+    vertical-align: top;
+}
+.inline {
+    display: inline;
+}
+.nopadding {
+    padding: 0px;
+}
+.panel.nopadding .panel-body {
+    padding: 0px;
+}
+
+.loading {
+    width: 50px;
+    margin-top: 15px;
+}
+.pane-cell {
+    padding: 10px;
+    overflow: auto;
+    width: 100%;
+    height: 100%;
+}
+.SqlEditor .header {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.scrollbar-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.scrollbar-content {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+  overflow: auto;
+  margin-right: 0px;
+  margin-bottom: 0px;
+}
+
+.Workspace .btn-sm {
+    box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    margin-top: 2px;
+    padding: 4px;
+}
+.Workspace hr {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+div.Workspace {
+    height: 100%;
+    margin: 0px;
+}
+.SqlEditor .clock {
+    background-color: orange;
+    padding: 5px;
+}
+
+.padded {
+    padding: 10px;
+}
+
+.p-t-10 {
+    padding-top: 10px;
+}
+.p-t-5 {
+    padding-top: 5px;
+}
+.m-r-5 {
+    margin-right: 5px;
+}
+.m-r-3 {
+    margin-right: 3px;
+}
+.m-l-1 {
+    margin-left: 1px;
+}
+.m-l-2 {
+    margin-left: 2px;
+}
+.m-r-10 {
+    margin-right: 10px;
+}
+.m-l-10 {
+    margin-left: 10px;
+}
+.m-l-5 {
+    margin-left: 5px;
+}
+.m-b-10 {
+    margin-bottom: 10px;
+}
+.m-t-5 {
+    margin-top: 5px;
+}
+.m-t-10 {
+    margin-top: 10px;
+}
+.p-t-10 {
+    padding-top: 10px;
+}
+.sql-toolbar {
+    padding: 10px;
+    background-color: #e8e8e8;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 2px solid #ccc;
+
+    form {
+        margin-block-end: 0;
+    }
+}
+.no-shadow {
+    box-shadow: none;
+    background-color: transparent;
+}
+.pane-west {
+    height: 100%;
+    overflow: auto;
+}
+.circle {
+    border-radius: 50%;
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    background-color: #ccc;
+    line-height: 8px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 15px;
+    margin-top: -3px;
+    font-weight: bold;
+}
+.running {
+    background-color: lime;
+    color: black;
+}
+.success {
+    background-color: #4AC15F;
+}
+.failed {
+    background-color: red;
+}
+
+.handle {
+    cursor: move;
+}
+.window {
+    z-index: 1000;
+    position: absolute;
+    width: 300px;
+    opacity: 0.85;
+    border: 1px solid #AAA;
+    max-height: 600px;
+    box-shadow: rgba(0, 0, 0, 0.8) 5px 5px 25px
+}
+.SqlLab pre {
+    padding: 0px !important;
+    margin: 0px;
+    border: none;
+    font-size: 12px;
+    background-color: transparent !important;
+}
+
+.SqlEditor {
+    .Resizer {
+        -moz-box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+    }
+
+    .Resizer.horizontal {
+        height: 4px;
+        border-top: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+        cursor: row-resize;
+        width: 4%;
+        margin-top: 4px;
+        margin-left: 47%;
+    }
+}
+
+.popover{
+    max-width:400px;
+}
+.Select-menu-outer {
+    z-index: 1000;
+}
+.table-label {
+    margin-top: 5px;
+    margin-right: 10px;
+    float: left;
+}
+div.tablePopover {
+    opacity: 0.7 !important;
+}
+div.tablePopover:hover {
+    opacity: 1 !important;
+}
+.ResultSetControls {
+    padding-bottom: 3px;
+    padding-top: 3px;
+}
+.ace_editor {
+  border: 1px solid #ccc;
+}
+
+.Select-menu-outer {
+    min-width: 100%;
+    width: inherit;
+}
+.Select-clear {
+    margin-top: -2px;
+}
+.Select-arrow {
+    margin-top: 5px;
+}
+
+.ace_content {
+    background-color: #f4f4f4;
+}
+
+.SouthPane .tab-content {
+    padding-top: 10px;
+}
+
+.TableElement {
+    margin-right: 10px;
+}
+
+.TableElement .well {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding: 5px 10px;
+}
+
+.TableElement .ws-el-controls  {
+    margin-right: -.3em;
+}
+
+.QueryTable .label {
+    display: inline-block;
+}
+
+.ResultsModal .modal-body {
+    min-height: 600px;
+}
+
+.modal-body {
+    overflow: auto;
+}
+
+a.Link {
+    cursor: pointer;
+}
+.QueryTable .well {
+    padding: 3px 5px;
+    margin: 3px 5px;
+}
+.tooltip pre {
+    background: transparent;
+    border: none;
+    text-align: left;
+    color: white;
+    font-size: 10px;
+}
+.tooltip-inner {
+    max-width: 500px;
+}
+.SplitPane.horizontal {
+    padding-right: 4px;
+}
+.SouthPane {
+    margin-top: 10px;
+    position: absolute;
+    width: 100%;
+    overflow: auto;
+}
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:hover,
+.nav-tabs > li.active > a:focus {
+    padding-bottom: 8px;
+}
+.nav-tabs .dropdown-toggle.btn .caret {
+    margin-top: -12px;
+}
+.nav-tabs .ddbtn-tab {
+    margin-left: 5px;
+    padding-right: 0;
+}
+.icon-container {
+    display: inline-block;
+    width: 30px;
+    text-align: center;
+}
+.search-date-filter-container {
+    display: flex;
+
+    .Select {
+        margin-right: 3px;
+    }
+}

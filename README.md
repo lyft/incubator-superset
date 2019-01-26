@@ -1,12 +1,29 @@
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
 Superset
 =========
 
 [![Build Status](https://travis-ci.org/apache/incubator-superset.svg?branch=master)](https://travis-ci.org/apache/incubator-superset)
 [![PyPI version](https://badge.fury.io/py/superset.svg)](https://badge.fury.io/py/superset)
-[![Coverage Status](https://coveralls.io/repos/apache/incubator-superset/badge.svg?branch=master&service=github)](https://coveralls.io/github/apache/incubator-superset?branch=master)
+[![Coverage Status](https://codecov.io/github/apache/incubator-superset/coverage.svg?branch=master)](https://codecov.io/github/apache/incubator-superset)
 [![PyPI](https://img.shields.io/pypi/pyversions/superset.svg?maxAge=2592000)](https://pypi.python.org/pypi/superset)
-[![Requirements Status](https://requires.io/github/apache/incubator-superset/requirements.svg?branch=master)](https://requires.io/github/apache/incubator-superset/requirements/?branch=master)
-[![Join the chat at https://gitter.im/apache/incubator-superset](https://badges.gitter.im/apache/incubator-superset.svg)](https://gitter.im/apache/incubator-superset?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Join the chat at https://gitter.im/airbnb/superset](https://badges.gitter.im/apache/incubator-superset.svg)](https://gitter.im/airbnb/superset?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Documentation](https://img.shields.io/badge/docs-apache.org-blue.svg)](https://superset.incubator.apache.org)
 [![dependencies Status](https://david-dm.org/apache/incubator-superset/status.svg?path=superset/assets)](https://david-dm.org/apache/incubator-superset?path=superset/assets)
 
@@ -27,27 +44,23 @@ Screenshots & Gifs
 
 **View Dashboards**
 
-![superset-dashboard](https://cloud.githubusercontent.com/assets/130878/20371438/a703a2a0-ac19-11e6-80c4-00a47c2eb644.gif)
+<kbd><img title="View Dashboards" src="https://raw.githubusercontent.com/apache/incubator-superset/master/superset/assets/images/screenshots/bank_dash.png"></kbd><br/>
 
-<br/>
+**Slice & dice your data**
 
-**View/Edit a Slice**
+<kbd><img title="Slice & dice your data" src="https://raw.githubusercontent.com/apache/incubator-superset/master/superset/assets/images/screenshots/explore.png"></kbd><br/>
 
-![superset-explore-slice](https://cloud.githubusercontent.com/assets/130878/20372732/410392f4-ac22-11e6-9c6d-3ef512e81212.gif)
+**Query and visualize your data with SQL Lab**
 
-<br/>
+<kbd><img title="SQL Lab" src="https://raw.githubusercontent.com/apache/incubator-superset/master/superset/assets/images/screenshots/sqllab.png"></kbd><br/>
 
-**Query and Visualize with SQL Lab**
+**Visualize geospatial data with deck.gl**
 
-![superset-sql-lab-visualization](https://cloud.githubusercontent.com/assets/130878/20372911/7c3b3358-ac23-11e6-8f24-923ef1b35715.gif)
+<kbd><img title="Geospatial" src="https://raw.githubusercontent.com/apache/incubator-superset/master/superset/assets/images/screenshots/deckgl_dash.png"></kbd><br/>
 
-<br/>
+**Choose from a wide array of visualizations**
 
-![superset-dashboard-misc](https://cloud.githubusercontent.com/assets/130878/20234704/0f40778c-a835-11e6-9556-983a62ea061b.png)
-
-![superset-edit-table](https://cloud.githubusercontent.com/assets/130878/20234705/0f415c88-a835-11e6-8b03-f7c35d56dd7d.png)
-
-![superset-query-search](https://cloud.githubusercontent.com/assets/130878/20234706/0f430a10-a835-11e6-8a0d-8b26cc2e6bbd.png)
+<kbd><img title="Visualizations" src="https://raw.githubusercontent.com/apache/incubator-superset/master/superset/assets/images/screenshots/visualizations.png"></kbd><br/>
 
 Apache Superset
 ---------------
@@ -97,15 +110,17 @@ Superset can be used to visualize data out of most databases:
 * MonetDB
 * Snowflake
 * Redshift
+* Clickhouse
+* Apache Kylin
 * **more!** look for the availability of a SQLAlchemy dialect for your database
   to find out whether it will work with Superset
 
 
-Druid!
+Apache Druid (Incubating)!
 ------
 
 On top of having the ability to query your relational databases,
-Superset has ships with deep integration with Druid (a real time distributed
+Superset ships with deep integration with Druid (a real time distributed
 column-store). When querying Druid,
 Superset can query humongous amounts of data on top of real time dataset.
 Note that Superset does not require Druid in any way to function, it's simply
@@ -127,33 +142,15 @@ Installation & Configuration
 [See in the documentation](https://superset.incubator.apache.org/installation.html)
 
 
-More screenshots
-----------------
-
-![superset-security-menu](https://cloud.githubusercontent.com/assets/130878/20234707/0f565886-a835-11e6-9277-b4f5f4aa2fcc.png)
-
-![superset-slice-bubble](https://cloud.githubusercontent.com/assets/130878/20234708/0f57f3d0-a835-11e6-8268-fcefe8f868c8.png)
-
-![superset-slice-map](https://cloud.githubusercontent.com/assets/130878/20234709/0f5a5a44-a835-11e6-987a-1b6f8ac9922b.png)
-
-![superset-slice-multiline](https://cloud.githubusercontent.com/assets/130878/20234710/0f632d68-a835-11e6-98d1-542dcb618193.png)
-
-![superset-slice-sankey](https://cloud.githubusercontent.com/assets/130878/20234711/0f639136-a835-11e6-8721-fe5e48dab8e7.png)
-
-![superset-slice-view](https://cloud.githubusercontent.com/assets/130878/20234712/0f63c4c6-a835-11e6-8595-6091a6428fa9.png)
-
-![superset-sql-lab-2](https://cloud.githubusercontent.com/assets/130878/20234713/0f67b856-a835-11e6-9d50-7a52168f66fd.png)
-
-![superset-sql-lab](https://cloud.githubusercontent.com/assets/130878/20234714/0f68f45a-a835-11e6-9467-f47ad0af7e79.png)
-
-
 Resources
 -------------
-* [Superset Google Group](https://groups.google.com/forum/#!forum/airbnb_superset)
+* [Mailing list](https://lists.apache.org/list.html?dev@superset.apache.org)
 * [Gitter (live chat) Channel](https://gitter.im/airbnb/superset)
 * [Docker image](https://hub.docker.com/r/amancevice/superset/) (community contributed)
 * [Slides from Strata (March 2016)](https://drive.google.com/open?id=0B5PVE0gzO81oOVJkdF9aNkJMSmM)
 * [Stackoverflow tag](https://stackoverflow.com/questions/tagged/apache-superset)
+* [Join our Slack](https://join.slack.com/t/apache-superset/shared_invite/enQtNDMxMDY5NjM4MDU0LTc2Y2QwYjE4NGYwNzQyZWUwYTExZTdiZDMzMWQwZjc2YmJmM2QyMDkwMGVjZTA4N2I2MzUxZTk2YmE5MWRhZWE)
+* [DEPRECATED Google Group](https://groups.google.com/forum/#!forum/airbnb_superset)
 
 
 Contributing
@@ -169,29 +166,55 @@ Who uses Apache Superset (incubating)?
 Here's a list of organizations who have taken the time to send a PR to let
 the world know they are using Superset. Join our growing community!
 
- - [AiHello](https://www.aihello.com)
- - [Airbnb](https://github.com/airbnb)
- - [Amino](https://amino.com)
- - [Brilliant.org](https://brilliant.org/)
- - [Capital Service S.A.](http://capitalservice.pl)
- - [Clark.de](http://clark.de/)
- - [Digit Game Studios](https://www.digitgaming.com/)
- - [Douban](https://www.douban.com/)
- - [Endress+Hauser](http://www.endress.com/)
- - [FBK - ICT center](http://ict.fbk.eu)
- - [Faasos](http://faasos.com/)
- - [GfK Data Lab](http://datalab.gfk.com)
- - [Konfío](http://konfio.mx)
- - [Maieutical Labs](https://cloudschooling.it)
- - [Pronto Tools](http://www.prontotools.io)
- - [Qunar](https://www.qunar.com/)
- - [Shopee](https://shopee.sg)
- - [Shopkick](https://www.shopkick.com)
- - [Tails.com](https://tails.com)
- - [Tobii](http://www.tobii.com/)
- - [Tooploox](https://www.tooploox.com/)
- - [Udemy](https://www.udemy.com/)
- - [VIPKID](https://www.vipkid.com.cn/)
- - [Yahoo!](https://yahoo.com/)
- - [Zalando](https://www.zalando.com)
-
+ 1. [AiHello](https://www.aihello.com)
+ 1. [Airbnb](https://github.com/airbnb)
+ 1. [Airboxlab](https://foobot.io)
+ 1. [Aktia Bank plc](https://www.aktia.com)
+ 1. [Amino](https://amino.com)
+ 1. [Apollo GraphQL](https://www.apollographql.com/)
+ 1. [Ascendica Development](http://ascendicadevelopment.com)
+ 1. [Astronomer](https://www.astronomer.io)
+ 1. [Brilliant.org](https://brilliant.org/)
+ 1. [Capital Service S.A.](http://capitalservice.pl)
+ 1. [Clark.de](http://clark.de/)
+ 1. [CnOvit](http://www.cnovit.com/)
+ 1. [Dial Once](https://www.dial-once.com/en/)
+ 1. [Digit Game Studios](https://www.digitgaming.com/)
+ 1. [Douban](https://www.douban.com/)
+ 1. [Endress+Hauser](http://www.endress.com/)
+ 1. [FBK - ICT center](http://ict.fbk.eu)
+ 1. [Faasos](http://faasos.com/)
+ 1. [Fordeal](http://www.fordeal.com)
+ 1. [GfK Data Lab](http://datalab.gfk.com)
+ 1. [Grassroot](https://www.grassrootinstitute.org/)
+ 1. [HuiShouBao](http://www.huishoubao.com/)
+ 1. [jampp](https://jampp.com/)
+ 1. [Konfío](http://konfio.mx)
+ 1. [Kuaishou](https://www.kuaishou.com/)
+ 1. [Lime](https://www.limebike.com/)
+ 1. [Lyft](https://www.lyft.com/)
+ 1. [Maieutical Labs](https://maieuticallabs.it)
+ 1. [Myra Labs](http://www.myralabs.com/)
+ 1. [Now](https://www.now.vn/)
+ 1. [PeopleDoc](https://www.people-doc.com)
+ 1. [Ona](https://ona.io)
+ 1. [Pronto Tools](http://www.prontotools.io)
+ 1. [QPID Health](http://www.qpidhealth.com/    )
+ 1. [Qunar](https://www.qunar.com/)
+ 1. [ScopeAI](https://www.getscopeai.com)
+ 1. [Shopee](https://shopee.sg)
+ 1. [Shopkick](https://www.shopkick.com)
+ 1. [Steamroot](https://streamroot.io/)
+ 1. [Showmax](https://tech.showmax.com)
+ 1. [Tails.com](https://tails.com)
+ 1. [THEICONIC](http://theiconic.com.au/)
+ 1. [Tobii](http://www.tobii.com/)
+ 1. [Tooploox](https://www.tooploox.com/)
+ 1. [TrustMedis](https://trustmedis.com)
+ 1. [Twitter](https://twitter.com/)
+ 1. [Udemy](https://www.udemy.com/)
+ 1. [VIPKID](https://www.vipkid.com.cn/)
+ 1. [Windsor.ai](https://www.windsor.ai/)
+ 1. [Yahoo!](https://yahoo.com/)
+ 1. [Zaihang](http://www.zaih.com/)
+ 1. [Zalando](https://www.zalando.com)

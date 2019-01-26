@@ -1,9 +1,26 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
-import { Overlay, Popover, FormControl } from 'react-bootstrap';
+import { FormControl } from 'react-bootstrap';
 import { shallow } from 'enzyme';
-import { describe, it } from 'mocha';
-import { expect } from 'chai';
-import SaveQuery from '../../../javascripts/SqlLab/components/SaveQuery';
+import SaveQuery from '../../../src/SqlLab/components/SaveQuery';
+import ModalTrigger from '../../../src/components/ModalTrigger';
 
 describe('SavedQuery', () => {
   const mockedProps = {
@@ -16,32 +33,25 @@ describe('SavedQuery', () => {
   it('is valid', () => {
     expect(
       React.isValidElement(<SaveQuery />),
-    ).to.equal(true);
+    ).toBe(true);
   });
   it('is valid with props', () => {
     expect(
       React.isValidElement(<SaveQuery {...mockedProps} />),
-    ).to.equal(true);
+    ).toBe(true);
   });
-  it('has an Overlay and a Popover', () => {
+  it('has a ModalTrigger', () => {
     const wrapper = shallow(<SaveQuery {...mockedProps} />);
-    expect(wrapper.find(Overlay)).to.have.length(1);
-    expect(wrapper.find(Popover)).to.have.length(1);
-  });
-  it('pops and hides', () => {
-    const wrapper = shallow(<SaveQuery {...mockedProps} />);
-    expect(wrapper.state().showSave).to.equal(false);
-    wrapper.find('.toggleSave').simulate('click', { target: { value: 'test' } });
-    expect(wrapper.state().showSave).to.equal(true);
-    wrapper.find('.toggleSave').simulate('click', { target: { value: 'test' } });
-    expect(wrapper.state().showSave).to.equal(false);
+    expect(wrapper.find(ModalTrigger)).toHaveLength(1);
   });
   it('has a cancel button', () => {
     const wrapper = shallow(<SaveQuery {...mockedProps} />);
-    expect(wrapper.find('.cancelQuery')).to.have.length(1);
+    const modal = shallow(wrapper.instance().renderModalBody());
+    expect(modal.find('.cancelQuery')).toHaveLength(1);
   });
   it('has 2 FormControls', () => {
     const wrapper = shallow(<SaveQuery {...mockedProps} />);
-    expect(wrapper.find(FormControl)).to.have.length(2);
+    const modal = shallow(wrapper.instance().renderModalBody());
+    expect(modal.find(FormControl)).toHaveLength(2);
   });
 });

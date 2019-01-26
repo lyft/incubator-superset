@@ -1,56 +1,80 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-from time import sleep
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+# pylint: disable=C,R,W
+from contextlib import closing
 from datetime import datetime
-import json
 import logging
+from time import sleep
 import uuid
-import pandas as pd
-import sqlalchemy
 
-from sqlalchemy.pool import NullPool
-from sqlalchemy.orm import sessionmaker
 from celery.exceptions import SoftTimeLimitExceeded
+from contextlib2 import contextmanager
+from flask_babel import lazy_gettext as _
+import simplejson as json
+import sqlalchemy
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
-from superset import (app, db, utils, dataframe, results_backend)
+from superset import app, dataframe, db, results_backend, security_manager
 from superset.models.sql_lab import Query
-from superset.sql_parse import SupersetQuery
-from superset.db_engine_specs import LimitMethod
-from superset.jinja_context import get_template_processor
-from superset.utils import QueryStatus, get_celery_app
+from superset.sql_parse import ParsedQuery
+from superset.tasks.celery_app import app as celery_app
+from superset.utils.core import (
+    json_iso_dttm_ser,
+    QueryStatus,
+    sources,
+    zlib_compress,
+)
+from superset.utils.dates import now_as_float
+from superset.utils.decorators import stats_timing
 
 config = app.config
-celery_app = get_celery_app(config)
-stats_logger = app.config.get('STATS_LOGGER')
+stats_logger = config.get('STATS_LOGGER')
 SQLLAB_TIMEOUT = config.get('SQLLAB_ASYNC_TIME_LIMIT_SEC', 600)
+log_query = config.get('QUERY_LOGGER')
 
 
 class SqlLabException(Exception):
     pass
 
 
-def dedup(l, suffix='__'):
-    """De-duplicates a list of string by suffixing a counter
+class SqlLabSecurityException(SqlLabException):
+    pass
 
-    Always returns the same number of entries as provided, and always returns
-    unique values.
 
-    >>> print(','.join(dedup(['foo', 'bar', 'bar', 'bar'])))
-    foo,bar,bar__1,bar__2
-    """
-    new_l = []
-    seen = {}
-    for s in l:
-        if s in seen:
-            seen[s] += 1
-            s += suffix + str(seen[s])
-        else:
-            seen[s] = 0
-        new_l.append(s)
-    return new_l
+class SqlLabTimeoutException(SqlLabException):
+    pass
+
+
+def handle_query_error(msg, query, session, payload=None):
+    """Local method handling error while processing the SQL"""
+    payload = payload or {}
+    troubleshooting_link = config['TROUBLESHOOTING_LINK']
+    query.error_message = msg
+    query.status = QueryStatus.FAILED
+    query.tmp_table_name = None
+    session.commit()
+    payload.update({
+        'status': query.status,
+        'error': msg,
+    })
+    if troubleshooting_link:
+        payload['link'] = troubleshooting_link
+    return payload
 
 
 def get_query(query_id, session, retry_count=5):
@@ -63,178 +87,202 @@ def get_query(query_id, session, retry_count=5):
         except Exception:
             attempt += 1
             logging.error(
-                "Query with id `{}` could not be retrieved".format(query_id))
+                'Query with id `{}` could not be retrieved'.format(query_id))
             stats_logger.incr('error_attempting_orm_query_' + str(attempt))
-            logging.error("Sleeping for a sec before retrying...")
+            logging.error('Sleeping for a sec before retrying...')
             sleep(1)
     if not query:
         stats_logger.incr('error_failed_at_getting_orm_query')
-        raise SqlLabException("Failed at getting query")
+        raise SqlLabException('Failed at getting query')
     return query
 
 
-def get_session(nullpool):
+@contextmanager
+def session_scope(nullpool):
+    """Provide a transactional scope around a series of operations."""
     if nullpool:
         engine = sqlalchemy.create_engine(
             app.config.get('SQLALCHEMY_DATABASE_URI'), poolclass=NullPool)
         session_class = sessionmaker()
         session_class.configure(bind=engine)
-        return session_class()
-    session = db.session()
-    session.commit()  # HACK
-    return session
+        session = session_class()
+    else:
+        session = db.session()
+        session.commit()  # HACK
 
-
-@celery_app.task(bind=True, soft_time_limit=SQLLAB_TIMEOUT)
-def get_sql_results(
-        ctask, query_id, return_results=True, store_results=False, user_name=None):
-    """Executes the sql query returns the results."""
     try:
-        return execute_sql(
-            ctask, query_id, return_results, store_results, user_name)
+        yield session
+        session.commit()
     except Exception as e:
+        session.rollback()
         logging.exception(e)
-        stats_logger.incr('error_sqllab_unhandled')
-        sesh = get_session(not ctask.request.called_directly)
-        query = get_query(query_id, sesh)
-        query.error_message = str(e)
-        query.status = QueryStatus.FAILED
-        query.tmp_table_name = None
-        sesh.commit()
         raise
+    finally:
+        session.close()
 
 
-def execute_sql(
-    ctask, query_id, return_results=True, store_results=False, user_name=None):
+@celery_app.task(name='sql_lab.get_sql_results',
+                 bind=True,
+                 soft_time_limit=SQLLAB_TIMEOUT)
+def get_sql_results(
+    ctask, query_id, rendered_query, return_results=True, store_results=False,
+        user_name=None, start_time=None):
     """Executes the sql query returns the results."""
-    session = get_session(not ctask.request.called_directly)
+    with session_scope(not ctask.request.called_directly) as session:
 
-    query = get_query(query_id, session)
-    payload = dict(query_id=query_id)
+        try:
+            return execute_sql_statements(
+                ctask, query_id, rendered_query, return_results, store_results, user_name,
+                session=session, start_time=start_time)
+        except Exception as e:
+            logging.exception(e)
+            stats_logger.incr('error_sqllab_unhandled')
+            query = get_query(query_id, session)
+            return handle_query_error(str(e), query, session)
 
+
+def execute_sql_statement(
+        sql_statement, query, user_name, session,
+        cursor, return_results=False):
+    """Executes a single SQL statement"""
     database = query.database
     db_engine_spec = database.db_engine_spec
-    db_engine_spec.patch()
+    parsed_query = ParsedQuery(sql_statement)
+    sql = parsed_query.stripped()
+    SQL_MAX_ROWS = app.config.get('SQL_MAX_ROW')
 
-    def handle_error(msg):
-        """Local method handling error while processing the SQL"""
-        troubleshooting_link = config["TROUBLESHOOTING_LINK"]
-        msg = "Error: {}. You can find common superset errors and their \
-            resolutions at: {}".format(msg, troubleshooting_link) \
-            if troubleshooting_link else msg
-        query.error_message = msg
-        query.status = QueryStatus.FAILED
-        query.tmp_table_name = None
-        session.commit()
-        payload.update({
-            'status': query.status,
-            'error': msg,
-        })
-        return payload
-
-    if store_results and not results_backend:
-        return handle_error("Results backend isn't configured.")
-
-    # Limit enforced only for retrieving the data, not for the CTA queries.
-    superset_query = SupersetQuery(query.sql)
-    executed_sql = superset_query.stripped()
-    if not superset_query.is_select() and not database.allow_dml:
-        return handle_error(
-            "Only `SELECT` statements are allowed against this database")
+    if not parsed_query.is_readonly() and not database.allow_dml:
+        raise SqlLabSecurityException(
+            _('Only `SELECT` statements are allowed against this database'))
     if query.select_as_cta:
-        if not superset_query.is_select():
-            return handle_error(
-                "Only `SELECT` statements can be used with the CREATE TABLE "
-                "feature.")
-            return
+        if not parsed_query.is_select():
+            raise SqlLabException(_(
+                'Only `SELECT` statements can be used with the CREATE TABLE '
+                'feature.'))
         if not query.tmp_table_name:
             start_dttm = datetime.fromtimestamp(query.start_time)
             query.tmp_table_name = 'tmp_{}_table_{}'.format(
                 query.user_id, start_dttm.strftime('%Y_%m_%d_%H_%M_%S'))
-        executed_sql = superset_query.as_create_table(query.tmp_table_name)
+        sql = parsed_query.as_create_table(query.tmp_table_name)
         query.select_as_cta_used = True
-    elif (query.limit and superset_query.is_select()
-          and db_engine_spec.limit_method == LimitMethod.WRAP_SQL):
-        executed_sql = database.wrap_sql_limit(executed_sql, query.limit)
-        query.limit_used = True
-    try:
-        template_processor = get_template_processor(
-            database=database, query=query)
-        executed_sql = template_processor.process_template(executed_sql)
-    except Exception as e:
-        logging.exception(e)
-        msg = "Template rendering failed: " + utils.error_msg_from_exception(e)
-        return handle_error(msg)
+    if parsed_query.is_select():
+        if SQL_MAX_ROWS and (not query.limit or query.limit > SQL_MAX_ROWS):
+            query.limit = SQL_MAX_ROWS
+        if query.limit:
+            sql = database.apply_limit_to_sql(sql, query.limit)
 
-    query.executed_sql = executed_sql
-    query.status = QueryStatus.RUNNING
-    query.start_running_time = utils.now_as_float()
-    session.merge(query)
-    session.commit()
-    logging.info("Set query to 'running'")
-    conn = None
+    # Hook to allow environment-specific mutation (usually comments) to the SQL
+    SQL_QUERY_MUTATOR = config.get('SQL_QUERY_MUTATOR')
+    if SQL_QUERY_MUTATOR:
+        sql = SQL_QUERY_MUTATOR(sql, user_name, security_manager, database)
+
     try:
-        engine = database.get_sqla_engine(
-            schema=query.schema, nullpool=not ctask.request.called_directly, user_name=user_name)
-        conn = engine.raw_connection()
-        cursor = conn.cursor()
-        logging.info("Running query: \n{}".format(executed_sql))
-        logging.info(query.executed_sql)
-        cursor.execute(query.executed_sql,
-                       **db_engine_spec.cursor_execute_kwargs)
-        logging.info("Handling cursor")
-        db_engine_spec.handle_cursor(cursor, query, session)
-        logging.info("Fetching data: {}".format(query.to_dict()))
-        data = db_engine_spec.fetch_data(cursor, query.limit)
+        if log_query:
+            log_query(
+                query.database.sqlalchemy_uri,
+                query.executed_sql,
+                query.schema,
+                user_name,
+                __name__,
+                security_manager,
+            )
+        query.executed_sql = sql
+        with stats_timing('sqllab.query.time_executing_query', stats_logger):
+            logging.info('Running query: \n{}'.format(sql))
+            db_engine_spec.execute(cursor, sql, async_=True)
+            logging.info('Handling cursor')
+            db_engine_spec.handle_cursor(cursor, query, session)
+
+        with stats_timing('sqllab.query.time_fetching_results', stats_logger):
+            logging.debug('Fetching data for query object: {}'.format(query.to_dict()))
+            data = db_engine_spec.fetch_data(cursor, query.limit)
+
     except SoftTimeLimitExceeded as e:
         logging.exception(e)
-        if conn is not None:
-            conn.close()
-        return handle_error(
+        raise SqlLabTimeoutException(
             "SQL Lab timeout. This environment's policy is to kill queries "
-            "after {} seconds.".format(SQLLAB_TIMEOUT))
+            'after {} seconds.'.format(SQLLAB_TIMEOUT))
     except Exception as e:
         logging.exception(e)
-        if conn is not None:
-            conn.close()
-        return handle_error(db_engine_spec.extract_error_message(e))
+        raise SqlLabException(db_engine_spec.extract_error_message(e))
 
-    logging.info("Fetching cursor description")
+    logging.debug('Fetching cursor description')
     cursor_description = cursor.description
+    return dataframe.SupersetDataFrame(data, cursor_description, db_engine_spec)
 
-    if conn is not None:
-        conn.commit()
-        conn.close()
 
-    if query.status == utils.QueryStatus.STOPPED:
-        return json.dumps(
-            {
-                'query_id': query.id,
-                'status': query.status,
-                'query': query.to_dict(),
-            },
-            default=utils.json_iso_dttm_ser)
+def execute_sql_statements(
+    ctask, query_id, rendered_query, return_results=True, store_results=False,
+    user_name=None, session=None, start_time=None,
+):
+    """Executes the sql query returns the results."""
+    if store_results and start_time:
+        # only asynchronous queries
+        stats_logger.timing(
+            'sqllab.query.time_pending', now_as_float() - start_time)
 
-    column_names = (
-        [col[0] for col in cursor_description] if cursor_description else [])
-    column_names = dedup(column_names)
-    cdf = dataframe.SupersetDataFrame(
-        pd.DataFrame(list(data), columns=column_names))
+    query = get_query(query_id, session)
+    payload = dict(query_id=query_id)
+    database = query.database
+    db_engine_spec = database.db_engine_spec
+    db_engine_spec.patch()
 
+    if store_results and not results_backend:
+        raise SqlLabException("Results backend isn't configured.")
+
+    # Breaking down into multiple statements
+    parsed_query = ParsedQuery(rendered_query)
+    statements = parsed_query.get_statements()
+    logging.info(f'Executing {len(statements)} statement(s)')
+
+    logging.info("Set query to 'running'")
+    query.status = QueryStatus.RUNNING
+    query.start_running_time = now_as_float()
+
+    engine = database.get_sqla_engine(
+        schema=query.schema,
+        nullpool=True,
+        user_name=user_name,
+        source=sources.get('sql_lab', None),
+    )
+    # Sharing a single connection and cursor across the
+    # execution of all statements (if many)
+    with closing(engine.raw_connection()) as conn:
+        with closing(conn.cursor()) as cursor:
+            statement_count = len(statements)
+            for i, statement in enumerate(statements):
+                # TODO CHECK IF STOPPED
+                msg = f'Running statement {i+1} out of {statement_count}'
+                logging.info(msg)
+                query.set_extra_json_key('progress', msg)
+                session.commit()
+                is_last_statement = i == len(statements) - 1
+                try:
+                    cdf = execute_sql_statement(
+                        statement, query, user_name, session, cursor,
+                        return_results=is_last_statement and return_results)
+                    msg = f'Running statement {i+1} out of {statement_count}'
+                except Exception as e:
+                    msg = str(e)
+                    if statement_count > 1:
+                        msg = f'[Statement {i+1} out of {statement_count}] ' + msg
+                    payload = handle_query_error(msg, query, session, payload)
+                    return payload
+
+    # Success, updating the query entry in database
     query.rows = cdf.size
     query.progress = 100
+    query.set_extra_json_key('progress', None)
     query.status = QueryStatus.SUCCESS
     if query.select_as_cta:
-        query.select_sql = '{}'.format(
-            database.select_star(
-                query.tmp_table_name,
-                limit=query.limit,
-                schema=database.force_ctas_schema,
-                show_cols=False,
-                latest_partition=False, ))
-    query.end_time = utils.now_as_float()
-    session.merge(query)
-    session.flush()
+        query.select_sql = database.select_star(
+            query.tmp_table_name,
+            limit=query.limit,
+            schema=database.force_ctas_schema,
+            show_cols=False,
+            latest_partition=False)
+    query.end_time = now_as_float()
+    session.commit()
 
     payload.update({
         'status': query.status,
@@ -242,15 +290,18 @@ def execute_sql(
         'columns': cdf.columns if cdf.columns else [],
         'query': query.to_dict(),
     })
-    if store_results:
-        key = '{}'.format(uuid.uuid4())
-        logging.info("Storing results in results backend, key: {}".format(key))
-        json_payload = json.dumps(payload, default=utils.json_iso_dttm_ser)
-        results_backend.set(key, utils.zlib_compress(json_payload))
-        query.results_key = key
-        query.end_result_backend_time = utils.now_as_float()
 
-    session.merge(query)
+    if store_results:
+        key = str(uuid.uuid4())
+        logging.info(f'Storing results in results backend, key: {key}')
+        with stats_timing('sqllab.query.results_backend_write', stats_logger):
+            json_payload = json.dumps(
+                payload, default=json_iso_dttm_ser, ignore_nan=True)
+            cache_timeout = database.cache_timeout
+            if cache_timeout is None:
+                cache_timeout = config.get('CACHE_DEFAULT_TIMEOUT', 0)
+            results_backend.set(key, zlib_compress(json_payload), cache_timeout)
+        query.results_key = key
     session.commit()
 
     if return_results:

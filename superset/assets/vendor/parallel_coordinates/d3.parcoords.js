@@ -1,3 +1,4 @@
+/* [LICENSE TBD] */
 module.exports = function(config) {
   var __ = {
     data: [],
@@ -1775,8 +1776,6 @@ module.exports = function(config) {
         arc.p2[0] = Math.min(Math.max(arc.minX + 1, ev.x - __.margin.left), arc.maxX);
         arc.p2[1] = Math.min(Math.max(arc.minY, ev.y - __.margin.top), arc.maxY);
         arc.p3 = arc.p2.slice();
-  //      console.log(arcs.angle(arcs.active));
-  //      console.log(signedAngle(arcs.unsignedAngle(arcs.active)));
         drawStrum(arc, 1);
       };
     }

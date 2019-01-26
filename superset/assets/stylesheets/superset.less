@@ -1,8 +1,28 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 @import './less/index.less';
 @import "./less/cosmo/variables.less";
 
+@datasource-sql-expression-width: 450px;
+
 body {
-    margin: 0px !important;
+    margin: 0 !important;
 }
 
 .caret {
@@ -32,10 +52,6 @@ input.form-control {
     background-color: white;
 }
 
-input.form-control.input-sm {
-  height: 36px;
-}
-
 .chart-header a.danger {
     color: red;
 }
@@ -55,7 +71,7 @@ input.form-control.input-sm {
 
 .slice_description{
     padding: 8px;
-    margin: 5px;
+    margin: 5px 0;
     border: 1px solid #DDD;
     background-color: #F8F8F8;
     border-radius: 5px;
@@ -118,7 +134,6 @@ span.title-block {
 }
 
 .nvtooltip {
-    //position: relative !important;
     z-index: 888;
     transition: opacity 0ms linear;
     -moz-transition: opacity 0ms linear;
@@ -145,7 +160,7 @@ div.navbar {
 img.loading {
   width: 40px;
   position: relative;
-  z-index: 10;
+  z-index: 1;
   margin: 10px;
 }
 img.viz-thumb-option {
@@ -166,7 +181,6 @@ li.widget:hover {
 div.widget .chart-header {
   padding-top: 8px;
   color: #333;
-  border-bottom: 1px solid #aaa;
   margin: 0 10px;
 }
 
@@ -181,16 +195,32 @@ div.widget .chart-header {
 }
 
 
-div.widget .chart-header a {
-  margin-left: 5px;
-}
-
 #is_cached {
   display: none;
 }
 
-div.widget .slice_container {
-  overflow: hidden;
+.slice_container.faded {
+  opacity: .2;
+}
+
+div.widget {
+  .slice_container {
+    overflow: hidden;
+  }
+
+  .stack-trace-container.has-trace {
+    .alert-warning:hover {
+      cursor: pointer;
+    }
+  }
+
+  .is-loading {
+    .stack-trace-container,
+    .slice_container {
+      opacity: 0.5;
+      position: relative;
+    }
+  }
 }
 
 .navbar .alert {
@@ -207,39 +237,102 @@ div.widget .slice_container {
     float: left;
 }
 
+table.table-no-hover tr:hover {
+    background-color: initial;
+}
+
 .editable-title input {
-    padding: 2px 6px 3px 6px;
+  outline: none;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  cursor: initial;
+}
+
+.editable-title textarea {
+  outline: none;
+  background: transparent;
+  box-shadow: none;
+  cursor: initial;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+}
+
+.editable-title input[type="text"] {
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  padding: 2px;
+}
+
+.editable-title.datasource-sql-expression {
+  font-family: @font-family-monospace;
+  font-size: 95%;
+  display: inline-block;
+  min-width: @datasource-sql-expression-width;
+}
+
+.editable-title.datasource-sql-expression input {
+  width: 95%;
+  padding-bottom: 5px;
+}
+
+.editable-title.datasource-sql-expression textarea {
+  width: 95%;
 }
 
 .editable-title input[type="button"] {
-    border-color: transparent;
-    background: inherit;
-    white-space: normal;
-    text-align: left;
+  border-color: transparent;
+  background: transparent;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: normal;
+  text-align: left;
+  cursor: initial;
 }
 
-.editable-title input[type="button"]:hover {
-    cursor: text;
+.editable-title.editable-title--editable input[type="button"] {
+  cursor: pointer;
 }
 
-.editable-title input[type="button"]:focus {
-    outline: none;
+.editable-title.editable-title--editing input[type="button"] {
+  cursor: text;
 }
+
 .m-r-5 {
-    margin-right: 5px;
+  margin-right: 5px;
 }
 .m-r-3 {
-    margin-right: 3px;
+  margin-right: 3px;
 }
 .m-t-5 {
-    margin-top: 5px;
+  margin-top: 5px;
+}
+.m-t-10 {
+  margin-top: 10px;
+}
+.m-b-10 {
+    margin-bottom: 10px;
 }
 .m-l-5 {
     margin-left: 5px;
 }
+.m-l-10 {
+    margin-left: 10px;
+}
 .m-l-25 {
     margin-left: 25px;
 }
+.p-l-0 {
+    padding-left: 0;
+}
+.p-t-8 {
+    padding-top: 8;
+}
+.p-r-2 {
+    padding-right: 2;
+}
+
 .Select-menu-outer {
     z-index: 10 !important;
 }
@@ -345,22 +438,6 @@ iframe {
     color: transparent;
 }
 
-// overwrite react-select css
-.Select--multi {
-  .Select-multi-value-wrapper {
-    display: flex;
-    flex-wrap: wrap;
-  }
-
-  .Select-value {
-    height: 23px;
-  }
-
-  .Select-input > input {
-    width: 100px;
-  }
-}
-
 .dimmed {
   opacity: 0.5;
 }
@@ -371,7 +448,7 @@ iframe {
   padding-bottom: 10px;
 }
 .popover {
-  max-width: 500px !important;
+  max-width: 500px;
 }
 .float-left {
   float: left;
@@ -393,4 +470,66 @@ g.annotation-container {
 }
 .stroke-primary {
   stroke: @brand-primary;
+}
+.reactable-header-sortable{
+    position:relative;
+    padding-right: 40px;
+}
+.reactable-header-sortable::after {
+    font: normal normal normal 14px/1 FontAwesome;
+    content: "\f0dc";
+    margin-left: 10px;
+    color: @brand-primary;
+}
+.reactable-header-sort-asc::after{
+    content: "\f0de";
+    color: @brand-primary;
+}
+.reactable-header-sort-desc::after{
+    content: "\f0dd";
+    color: @brand-primary;
+}
+tr.reactable-column-header th.reactable-header-sortable {
+    padding-right: 17px;
+}
+
+.explore-chart-overlay {
+  position: absolute;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.refresh-overlay-btn {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.dismiss-overlay-btn {
+  font-weight: bold;
+  background: white;
+  color: @brand-primary;
+  border-color: @brand-primary;
+}
+
+.fave-unfave-icon {
+  .fa-star-o,
+  .fa-star {
+    &,
+    &:hover,
+    &:active {
+      color: #263238;
+    }
+  }
+}
+
+.metric-edit-popover-label-input {
+  border-radius: 4px;
+  height: 30px;
+  padding-left: 10px;
+}
+.align-right {
+  text-align: right;
 }

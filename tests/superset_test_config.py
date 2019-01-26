@@ -1,3 +1,20 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+# flake8: noqa
 from superset.config import *
 
 AUTH_USER_REGISTRATION_ROLE = 'alpha'
@@ -10,7 +27,6 @@ SUPERSET_WEBSERVER_PORT = 8081
 if 'SUPERSET__SQLALCHEMY_DATABASE_URI' in os.environ:
     SQLALCHEMY_DATABASE_URI = os.environ.get('SUPERSET__SQLALCHEMY_DATABASE_URI')
 
-SQL_CELERY_RESULTS_DB_FILE_PATH = os.path.join(DATA_DIR, 'celery_results.sqlite')
 SQL_SELECT_AS_CTA = True
 SQL_MAX_ROW = 666
 
@@ -21,11 +37,13 @@ PUBLIC_ROLE_LIKE_GAMMA = True
 AUTH_ROLE_PUBLIC = 'Public'
 EMAIL_NOTIFICATIONS = False
 
+CACHE_CONFIG = {'CACHE_TYPE': 'simple'}
 
 class CeleryConfig(object):
     BROKER_URL = 'redis://localhost'
     CELERY_IMPORTS = ('superset.sql_lab', )
-    CELERY_RESULT_BACKEND = 'db+sqlite:///' + SQL_CELERY_RESULTS_DB_FILE_PATH
     CELERY_ANNOTATIONS = {'sql_lab.add': {'rate_limit': '10/s'}}
     CONCURRENCY = 1
+
+
 CELERY_CONFIG = CeleryConfig

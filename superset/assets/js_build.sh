@@ -1,12 +1,25 @@
 #!/bin/bash
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 set -e
 cd "$(dirname "$0")"
 npm --version
 node --version
-npm install -g yarn
-yarn
-npm run lint
-npm run test
-npm run build
-npm run cover
-CODECLIMATE_REPO_TOKEN=ded6121d25d593a1c5aee9f26d85717b19df058f7408cef26910aa731aa7cc3f ./node_modules/.bin/codeclimate-test-reporter < ./coverage/lcov.info
+time npm ci
+time npm run lint
+time npm run cover  # this also runs the tests, so no need to 'npm run test'
+time npm run build
