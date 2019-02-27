@@ -53,8 +53,8 @@ function getElevation(d, colorScaler) {
 
 export function getLayer(formData, payload, setTooltip, selected, onSelect, filters) {
   const fd = formData;
-  const fc = fd.fill_color_picker;
-  const sc = fd.stroke_color_picker;
+  const fc = fd.fillColorPicker;
+  const sc = fd.strokeColorPicker;
   let data = [...payload.data.features];
 
   if (filters != null) {
@@ -63,9 +63,9 @@ export function getLayer(formData, payload, setTooltip, selected, onSelect, filt
     });
   }
 
-  if (fd.js_data_mutator) {
+  if (fd.jsDataMutator) {
     // Applying user defined data mutator if defined
-    const jsFnMutator = sandboxedEval(fd.js_data_mutator);
+    const jsFnMutator = sandboxedEval(fd.jsDataMutator);
     data = jsFnMutator(data);
   }
 
@@ -79,20 +79,20 @@ export function getLayer(formData, payload, setTooltip, selected, onSelect, filt
   // when polygons are selected, reduce the opacity of non-selected polygons
   const colorScaler = (d) => {
     const baseColor = baseColorScaler(d);
-    if (selected.length > 0 && selected.indexOf(d[fd.line_column]) === -1) {
+    if (selected.length > 0 && selected.indexOf(d[fd.lineColumn]) === -1) {
       baseColor[3] /= 2;
     }
     return baseColor;
   };
   return new PolygonLayer({
-    id: `path-layer-${fd.slice_id}`,
+    id: `path-layer-${fd.sliceId}`,
     data,
     filled: fd.filled,
     stroked: fd.stroked,
     getPolygon: d => d.polygon,
     getFillColor: colorScaler,
     getLineColor: [sc.r, sc.g, sc.b, 255 * sc.a],
-    getLineWidth: fd.line_width,
+    getLineWidth: fd.lineWidth,
     extruded: fd.extruded,
     getElevation: d => getElevation(d, colorScaler),
     elevationScale: fd.multiplier,
@@ -192,7 +192,7 @@ class DeckGLPolygon extends React.Component {
 
     this.setState({ selected, lastClick: now });
     if (formData.table_filter) {
-      onAddFilter(formData.line_column, selected, false, true);
+      onAddFilter(formData.lineColumn, selected, false, true);
     }
   }
   onValuesChange(values) {
