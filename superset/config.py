@@ -186,9 +186,70 @@ LANGUAGES = {
 # ---------------------------------------------------
 # Feature flags
 # ---------------------------------------------------
-# Feature flags that are on by default go here. Their
-# values can be overridden by those in super_config.py
-FEATURE_FLAGS = {}
+# Feature flags that are set by default go here. Their values can be
+# overwritten by those specified under FEATURE_FLAGS in super_config.py
+# For example, DEFAULT_FEATURE_FLAGS = { 'FOO': True, 'BAR': False } here
+# and FEATURE_FLAGS = { 'BAR': True, 'BAZ': True } in superset_config.py
+# will result in combined feature flags of { 'FOO': True, 'BAR': True, 'BAZ': True }
+DEFAULT_FEATURE_FLAGS = {}
+FEATURE_FLAGS = {
+    # Configuration for scheduling queries from SQL Lab. This information is
+    # collected when the user clicks "Schedule query", and saved into the `extra`
+    # field of saved queries.
+    # See: https://github.com/mozilla-services/react-jsonschema-form
+    'SCHEDULED_QUERIES': {
+        'JSONSCHEMA': {
+            'title': 'Schedule',
+            'description': (
+                'In order to schedule a query, you need to specify when it '
+                'should start running, when it should stop running, and how '
+                'often it should run. You can also optionally specify '
+                'dependencies that should be met before the query is '
+                'executed. Please read the documentation for best practices '
+                'and more information on how to specify dependencies.'
+            ),
+            'type': 'object',
+            'properties': {
+                'output_table': {
+                    'type': 'string',
+                    'title': 'Output table name',
+                },
+                'start_date': {
+                    'type': 'string',
+                    'format': 'date-time',
+                    'title': 'Start date',
+                },
+                'end_date': {
+                    'type': 'string',
+                    'format': 'date-time',
+                    'title': 'End date',
+                },
+                'schedule_interval': {
+                    'type': 'string',
+                    'title': 'Schedule interval',
+                },
+                'dependencies': {
+                    'type': 'array',
+                    'title': 'Dependencies',
+                    'items': {
+                        'type': 'string',
+                    },
+                },
+            },
+        },
+        'UISCHEMA': {
+            'schedule_interval': {
+                'ui:placeholder': '@daily, @weekly, etc.',
+            },
+            'dependencies': {
+                'ui:help': (
+                    'Check the documentation for the correct format when '
+                    'defining dependencies.'
+                ),
+            },
+        },
+    },
+}
 
 # ---------------------------------------------------
 # Image and file configuration
