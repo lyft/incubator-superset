@@ -885,7 +885,7 @@ export const controls = {
     'filter below is applied against this column or ' +
     'expression'),
     default: control => control.default,
-    clearable: false,
+    clearable: true,
     optionRenderer: c => <ColumnOption column={c} showType />,
     valueRenderer: c => <ColumnOption column={c} />,
     valueKey: 'column_name',
