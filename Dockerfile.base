@@ -1,0 +1,66 @@
+# -----------------------------------------------------------------------------
+# Base OS + OS-level deps layer (python & node)
+# -----------------------------------------------------------------------------
+FROM alpine:3.9 AS superset-base
+
+RUN addgroup -g 1000 -S superset && \
+    adduser -u 1000 -S superset -G superset
+
+# Configure environment
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    CI=1
+
+RUN apk update
+
+# Install superset dependencies
+# https://superset.incubator.apache.org/installation.html#os-dependencies
+RUN apk add --no-cache \
+    python3 \
+    libstdc++ \
+    bash \
+    libffi-dev \
+    postgresql-dev \
+    openssl-dev \
+    python3-dev
+
+RUN ln -sf /usr/bin/python3 /usr/bin/python
+
+RUN pip3 install --no-cache-dir --upgrade setuptools pip
+
+# -----------------------------------------------------------------------------
+# Filling package pip caches
+# -----------------------------------------------------------------------------
+# this is not meant to be used as a base for another image,
+# but as a bloated image we copy the caches from in other images
+# Can be used for nightly builds
+FROM superset-base AS superset-py-cache
+
+RUN apk add --no-cache \
+    build-base
+WORKDIR /home/superset
+
+# Installing python deps
+COPY requirements.txt .
+# Note that alpine doesn't support Python wheels,
+# so C-based packages have to be compiled
+RUN pip --no-cache-dir install -r requirements.txt \
+ && pip --no-cache-dir install -r lyft-requirements.txt
+
+# -----------------------------------------------------------------------------
+# base + node
+# -----------------------------------------------------------------------------
+FROM superset-base AS superset-node-base
+RUN apk add --no-cache \
+    nodejs \
+    nodejs-npm
+
+# -----------------------------------------------------------------------------
+# Used for the [nightly] JS builds
+# -----------------------------------------------------------------------------
+FROM superset-node-base AS superset-node-cache
+
+WORKDIR /home/superset
+COPY . superset_repo
+WORKDIR /home/superset/superset_repo/superset/assets
+RUN npm ci && npm run build && rm -rf ./node_modules

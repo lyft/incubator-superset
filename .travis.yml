@@ -14,34 +14,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+language: python
+python: 3.6
 cache:
   pip: true
+
 jobs:
   include:
-    - language: python
-      python: 3.6
-      env: TOXENV=cypress-dashboard
+    - env: TOXENV=cypress-dashboard
       services:
         - redis-server
       before_install:
         - nvm install 10.14.2
-    - language: python
-      python: 3.6
-      env: TOXENV=cypress-explore
+    - env: TOXENV=cypress-explore
       services:
         - redis-server
       before_install:
         - nvm install 10.14.2
-    - language: python
-      python: 3.6
-      env: TOXENV=cypress-sqllab
+    - env: TOXENV=cypress-sqllab
       services:
         - redis-server
       before_install:
         - nvm install 10.14.2
-    - language: python
-      python: 3.6
-      env: TOXENV=py36-mysql
+    - env: TOXENV=py36-mysql
       services:
         - mysql
         - redis-server
@@ -49,38 +45,33 @@ jobs:
         - mysql -u root -e "DROP DATABASE IF EXISTS superset; CREATE DATABASE superset DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci"
         - mysql -u root -e "CREATE USER 'mysqluser'@'localhost' IDENTIFIED BY 'mysqluserpassword';"
         - mysql -u root -e "GRANT ALL ON superset.* TO 'mysqluser'@'localhost';"
-    - language: python
-      env: TOXENV=javascript
+    - env: TOXENV=javascript
       before_install:
         - nvm install 10.14.2
-    - language: python
-      python: 3.6
-      env: TOXENV=flake8
-    - language: python
-      python: 3.6
-      env: TOXENV=py36-sqlite
+    - env: TOXENV=flake8
+    - env: TOXENV=py36-sqlite
       services:
         - redis-server
-    - language: python
-      python: 3.6
-      env: TOXENV=py36-postgres
+    - env: TOXENV=py36-postgres
       services:
         - postgres
         - redis-server
       before_script:
         - psql -U postgres -c "CREATE DATABASE superset;"
         - psql -U postgres -c "CREATE USER postgresuser WITH PASSWORD 'pguserpassword';"
-    - language: python
-      python: 3.6
-      env: TOXENV=pylint
-    - language: python
-      env:
+    - env: TOXENV=pylint
+    - env:
         - TOXENV=license-check
         - TRAVIS_CACHE=$HOME/.travis_cache/
       jdk:
         - oraclejdk8
       before_install:
         - jdk_switcher use oraclejdk8
+
+    - stage: publishImages
+      script:
+        - docker run --rm hello-world
+
 
 install:
   - pip install --upgrade pip
