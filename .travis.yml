@@ -72,7 +72,7 @@ jobs:
       services:
         - docker
       script:
-        - echo $(git diff --name-only $TRAVIS_COMMIT_RANGE)
+        - ./ci/build-base-images.sh
         - docker run --rm hello-world
 
 
