@@ -22,51 +22,51 @@ cache:
 
 jobs:
   include:
-    - env: TOXENV=cypress-dashboard
-      services:
-        - redis-server
-      before_install:
-        - nvm install 10.14.2
-    - env: TOXENV=cypress-explore
-      services:
-        - redis-server
-      before_install:
-        - nvm install 10.14.2
-    - env: TOXENV=cypress-sqllab
-      services:
-        - redis-server
-      before_install:
-        - nvm install 10.14.2
-    - env: TOXENV=py36-mysql
-      services:
-        - mysql
-        - redis-server
-      before_script:
-        - mysql -u root -e "DROP DATABASE IF EXISTS superset; CREATE DATABASE superset DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci"
-        - mysql -u root -e "CREATE USER 'mysqluser'@'localhost' IDENTIFIED BY 'mysqluserpassword';"
-        - mysql -u root -e "GRANT ALL ON superset.* TO 'mysqluser'@'localhost';"
-    - env: TOXENV=javascript
-      before_install:
-        - nvm install 10.14.2
+    #- env: TOXENV=cypress-dashboard
+    #  services:
+    #    - redis-server
+    #  before_install:
+    #    - nvm install 10.14.2
+    #- env: TOXENV=cypress-explore
+    #  services:
+    #    - redis-server
+    #  before_install:
+    #    - nvm install 10.14.2
+    #- env: TOXENV=cypress-sqllab
+    #  services:
+    #    - redis-server
+    #  before_install:
+    #    - nvm install 10.14.2
+    #- env: TOXENV=py36-mysql
+    #  services:
+    #    - mysql
+    #    - redis-server
+    #  before_script:
+    #    - mysql -u root -e "DROP DATABASE IF EXISTS superset; CREATE DATABASE superset DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci"
+    #    - mysql -u root -e "CREATE USER 'mysqluser'@'localhost' IDENTIFIED BY 'mysqluserpassword';"
+    #    - mysql -u root -e "GRANT ALL ON superset.* TO 'mysqluser'@'localhost';"
+    #- env: TOXENV=javascript
+    #  before_install:
+    #    - nvm install 10.14.2
     - env: TOXENV=flake8
-    - env: TOXENV=py36-sqlite
-      services:
-        - redis-server
-    - env: TOXENV=py36-postgres
-      services:
-        - postgres
-        - redis-server
-      before_script:
-        - psql -U postgres -c "CREATE DATABASE superset;"
-        - psql -U postgres -c "CREATE USER postgresuser WITH PASSWORD 'pguserpassword';"
-    - env: TOXENV=pylint
-    - env:
-        - TOXENV=license-check
-        - TRAVIS_CACHE=$HOME/.travis_cache/
-      jdk:
-        - oraclejdk8
-      before_install:
-        - jdk_switcher use oraclejdk8
+    #- env: TOXENV=py36-sqlite
+    #  services:
+    #    - redis-server
+    #- env: TOXENV=py36-postgres
+    #  services:
+    #    - postgres
+    #    - redis-server
+    #  before_script:
+    #    - psql -U postgres -c "CREATE DATABASE superset;"
+    #    - psql -U postgres -c "CREATE USER postgresuser WITH PASSWORD 'pguserpassword';"
+    #- env: TOXENV=pylint
+    #- env:
+    #    - TOXENV=license-check
+    #    - TRAVIS_CACHE=$HOME/.travis_cache/
+    #  jdk:
+    #    - oraclejdk8
+    #  before_install:
+    #    - jdk_switcher use oraclejdk8
 
     - stage: publishImages
       script:
