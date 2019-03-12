@@ -69,7 +69,10 @@ jobs:
     #    - jdk_switcher use oraclejdk8
 
     - stage: publishImages
+      services:
+        - docker
       script:
+        - echo $(git diff --name-only $TRAVIS_COMMIT_RANGE)
         - docker run --rm hello-world
 
 
