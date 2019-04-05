@@ -64,6 +64,7 @@ class TagView(BaseSupersetView):
     def suggestions(self):
         query = (
             db.session.query(TaggedObject)
+            .join(Tag)
             .with_entities(TaggedObject.tag_id, Tag.name)
             .group_by(TaggedObject.tag_id, Tag.name)
             .order_by(func.count().desc())
