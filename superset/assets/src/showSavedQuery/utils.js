@@ -16,35 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-export const STATE_BSSTYLE_MAP = {
-  offline: 'danger',
-  failed: 'danger',
-  pending: 'info',
-  fetching: 'info',
-  running: 'warning',
-  stopped: 'danger',
-  success: 'success',
-};
 
-export const STATUS_OPTIONS = {
-  success: 'success',
-  failed: 'failed',
-  running: 'running',
-  offline: 'offline',
-  pending: 'pending',
-};
+export function getNestedValue(obj, id, separator = '.') {
+  /*
+   * Given a nested object and an id, return the nested value.
+   *
+   * > getNestedValue({a:{b:1}}, 'a.b')
+   * < 1
+   */
+  const index = id.indexOf(separator);
+  if (index === -1) {
+    return obj[id];
+  }
+  const name = id.slice(0, index);
+  const rest = id.slice(index + separator.length);
+  return getNestedValue(obj[name], rest, separator);
+}
 
-export const TIME_OPTIONS = [
-  'now',
-  '1 hour ago',
-  '1 day ago',
-  '7 days ago',
-  '28 days ago',
-  '90 days ago',
-  '1 year ago',
-];
-
-// SqlEditor layout constants
-export const SQL_EDITOR_GUTTER_HEIGHT = 5;
-export const SQL_EDITOR_GUTTER_MARGIN = 3;
-export const SQL_TOOLBAR_HEIGHT = 51;
+export function interpolate(str, obj) {
+  /*
+   * Programmatic template string for interpolation.
+   *
+   * > interpolate('foo ${a.b}', {a:{b:1}})
+   * < "foo 1"
+   */
+  return str.replace(/\$\{(.+?)\}/g, (match, id) => getNestedValue(obj, id));
+}
