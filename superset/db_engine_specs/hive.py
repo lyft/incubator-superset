@@ -349,33 +349,6 @@ class HiveEngineSpec(PrestoEngineSpec):
         return f"SHOW PARTITIONS {table_name}"
 
     @classmethod
-    def select_star(  # pylint: disable=too-many-arguments
-        cls,
-        database,
-        table_name: str,
-        engine: Engine,
-        schema: str = None,
-        limit: int = 100,
-        show_cols: bool = False,
-        indent: bool = True,
-        latest_partition: bool = True,
-        cols: Optional[List[Dict[str, Any]]] = None,
-    ) -> str:
-        return super(  # pylint: disable=bad-super-call
-            PrestoEngineSpec, cls
-        ).select_star(
-            database,
-            table_name,
-            engine,
-            schema,
-            limit,
-            show_cols,
-            indent,
-            latest_partition,
-            cols,
-        )
-
-    @classmethod
     def modify_url_for_impersonation(cls, url, impersonate_user: bool, username: str):
         """
         Modify the SQL Alchemy URL object with the user to impersonate if applicable.
