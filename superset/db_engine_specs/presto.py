@@ -173,8 +173,6 @@ class PrestoEngineSpec(BaseEngineSpec):
         return [row[0] for row in results]
 
     @classmethod
-    @classmethod
-    @classmethod
     def _show_columns(
         cls, inspector: Inspector, table_name: str, schema: Optional[str]
     ) -> List[RowProxy]:
