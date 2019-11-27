@@ -85,7 +85,7 @@ setup(
         "flask-migrate",
         "flask-wtf",
         "geopy",
-        "gunicorn<19.9.0",  # deprecated
+        "gunicorn>=20.0.2, <20.1",
         "humanize",
         "isodate",
         "markdown>=3.0",
@@ -97,7 +97,7 @@ setup(
         "python-dateutil",
         "python-dotenv",
         "python-geohash",
-        "pyarrow>=0.14.1, <0.15.0",
+        "pyarrow>=0.15.1, <0.16.0",
         "pyyaml>=5.1",
         "retry>=0.9.2",
         "selenium>=3.141.0",
@@ -128,4 +128,5 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
     ],
+    tests_require=["flask-testing==0.7.1"],
 )

@@ -29,13 +29,14 @@ import Control from '../../explore/components/Control';
 import controls from '../../explore/controls';
 import OnPasteSelect from '../../components/OnPasteSelect';
 import VirtualizedRendererWrap from '../../components/VirtualizedRendererWrap';
-import { getFilterColorKey, getFilterColorMap } from '../../dashboard/util/dashboardFiltersColorMap';
+import { getDashboardFilterKey } from '../../dashboard/util/getDashboardFilterKey';
+import { getFilterColorMap } from '../../dashboard/util/dashboardFiltersColorMap';
 import FilterBadgeIcon from '../../components/FilterBadgeIcon';
 
-import './FilterBox.css';
+import './FilterBox.less';
 
 // maps control names to their key in extra_filters
-const TIME_FILTER_MAP = {
+export const TIME_FILTER_MAP = {
   time_range: '__time_range',
   granularity_sqla: '__time_col',
   time_grain_sqla: '__time_grain',
@@ -43,7 +44,8 @@ const TIME_FILTER_MAP = {
   granularity: '__granularity',
 };
 
-export const TIME_RANGE = '__time_range';
+// a shortcut to a map key, used by many components
+export const TIME_RANGE = TIME_FILTER_MAP.time_range;
 export const FILTER_LABELS = {
   [TIME_RANGE]: 'Time range',
 };
@@ -303,7 +305,7 @@ class FilterBox extends React.Component {
   }
 
   renderFilterBadge(chartId, column) {
-    const colorKey = getFilterColorKey(chartId, column);
+    const colorKey = getDashboardFilterKey({ chartId, column });
     const filterColorMap = getFilterColorMap();
     const colorCode = filterColorMap[colorKey];
 
