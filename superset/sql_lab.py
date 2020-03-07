@@ -45,7 +45,12 @@ from superset.extensions import celery_app
 from superset.models.sql_lab import Query
 from superset.result_set import SupersetResultSet
 from superset.sql_parse import ParsedQuery
-from superset.utils.core import json_iso_dttm_ser, QueryStatus, sources, zlib_compress
+from superset.utils.core import (
+    json_iso_dttm_ser,
+    QuerySource,
+    QueryStatus,
+    zlib_compress,
+)
 from superset.utils.dates import now_as_float
 from superset.utils.decorators import stats_timing
 
@@ -54,6 +59,7 @@ stats_logger = config["STATS_LOGGER"]
 SQLLAB_TIMEOUT = config["SQLLAB_ASYNC_TIME_LIMIT_SEC"]
 SQLLAB_HARD_TIMEOUT = SQLLAB_TIMEOUT + 60
 SQL_MAX_ROW = config["SQL_MAX_ROW"]
+SQLLAB_CTAS_NO_LIMIT = config["SQLLAB_CTAS_NO_LIMIT"]
 SQL_QUERY_MUTATOR = config["SQL_QUERY_MUTATOR"]
 log_query = config["QUERY_LOGGER"]
 logger = logging.getLogger(__name__)
@@ -170,7 +176,8 @@ def get_sql_results(  # pylint: disable=too-many-arguments
                 log_params=log_params,
             )
         except Exception as e:  # pylint: disable=broad-except
-            logger.exception(f"Query {query_id}: {e}")
+            logger.error("Query %d", query_id)
+            logger.debug("Query %d: %s", query_id, e)
             stats_logger.incr("error_sqllab_unhandled")
             query = get_query(query_id, session)
             return handle_query_error(str(e), query, session)
@@ -201,9 +208,15 @@ def execute_sql_statement(sql_statement, query, user_name, session, cursor, log_
             query.tmp_table_name = "tmp_{}_table_{}".format(
                 query.user_id, start_dttm.strftime("%Y_%m_%d_%H_%M_%S")
             )
-        sql = parsed_query.as_create_table(query.tmp_table_name)
+        sql = parsed_query.as_create_table(
+            query.tmp_table_name, schema_name=query.tmp_schema_name
+        )
         query.select_as_cta_used = True
-    if parsed_query.is_select():
+
+    # Do not apply limit to the CTA queries when SQLLAB_CTAS_NO_LIMIT is set to true
+    if parsed_query.is_select() and not (
+        query.select_as_cta_used and SQLLAB_CTAS_NO_LIMIT
+    ):
         if SQL_MAX_ROW and (not query.limit or query.limit > SQL_MAX_ROW):
             query.limit = SQL_MAX_ROW
         if query.limit:
@@ -227,9 +240,9 @@ def execute_sql_statement(sql_statement, query, user_name, session, cursor, log_
         query.executed_sql = sql
         session.commit()
         with stats_timing("sqllab.query.time_executing_query", stats_logger):
-            logger.info(f"Query {query.id}: Running query: \n{sql}")
+            logger.debug("Query %d: Running query: %s", query.id, sql)
             db_engine_spec.execute(cursor, sql, async_=True)
-            logger.info(f"Query {query.id}: Handling cursor")
+            logger.debug("Query %d: Handling cursor", query.id)
             db_engine_spec.handle_cursor(cursor, query, session)
 
         with stats_timing("sqllab.query.time_fetching_results", stats_logger):
@@ -241,16 +254,18 @@ def execute_sql_statement(sql_statement, query, user_name, session, cursor, log_
             data = db_engine_spec.fetch_data(cursor, query.limit)
 
     except SoftTimeLimitExceeded as e:
-        logger.exception(f"Query {query.id}: {e}")
+        logger.error("Query %d: Time limit exceeded", query.id)
+        logger.debug("Query %d: %s", query.id, e)
         raise SqlLabTimeoutException(
             "SQL Lab timeout. This environment's policy is to kill queries "
             "after {} seconds.".format(SQLLAB_TIMEOUT)
         )
     except Exception as e:
-        logger.exception(f"Query {query.id}: {e}")
+        logger.error("Query %d: %s", query.id, type(e))
+        logger.debug("Query %d: %s", query.id, e)
         raise SqlLabException(db_engine_spec.extract_error_message(e))
 
-    logger.debug(f"Query {query.id}: Fetching cursor description")
+    logger.debug("Query %d: Fetching cursor description", query.id)
     cursor_description = cursor.description
     return SupersetResultSet(data, cursor_description, db_engine_spec)
 
@@ -341,7 +356,7 @@ def execute_sql_statements(
         schema=query.schema,
         nullpool=True,
         user_name=user_name,
-        source=sources.get("sql_lab", None),
+        source=QuerySource.SQL_LAB,
     )
     # Sharing a single connection and cursor across the
     # execution of all statements (if many)
@@ -370,6 +385,9 @@ def execute_sql_statements(
                     payload = handle_query_error(msg, query, session, payload)
                     return payload
 
+        # Commit the connection so CTA queries will create the table.
+        conn.commit()
+
     # Success, updating the query entry in database
     query.rows = result_set.size
     query.progress = 100
@@ -377,18 +395,16 @@ def execute_sql_statements(
     if query.select_as_cta:
         query.select_sql = database.select_star(
             query.tmp_table_name,
+            schema=query.tmp_schema_name,
             limit=query.limit,
-            schema=database.force_ctas_schema,
             show_cols=False,
             latest_partition=False,
         )
     query.end_time = now_as_float()
 
+    use_arrow_data = store_results and results_backend_use_msgpack
     data, selected_columns, all_columns, expanded_columns = _serialize_and_expand_data(
-        result_set,
-        db_engine_spec,
-        store_results and results_backend_use_msgpack,
-        expand_data,
+        result_set, db_engine_spec, use_arrow_data, expand_data
     )
 
     # TODO: data should be saved separately from metadata (likely in Parquet)
@@ -430,6 +446,24 @@ def execute_sql_statements(
     session.commit()
 
     if return_results:
+        # since we're returning results we need to create non-arrow data
+        if use_arrow_data:
+            (
+                data,
+                selected_columns,
+                all_columns,
+                expanded_columns,
+            ) = _serialize_and_expand_data(
+                result_set, db_engine_spec, False, expand_data
+            )
+            payload.update(
+                {
+                    "data": data,
+                    "columns": all_columns,
+                    "selected_columns": selected_columns,
+                    "expanded_columns": expanded_columns,
+                }
+            )
         return payload
 
     return None

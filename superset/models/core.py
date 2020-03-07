@@ -278,11 +278,11 @@ class Database(
         schema: Optional[str] = None,
         nullpool: bool = True,
         user_name: Optional[str] = None,
-        source: Optional[int] = None,
+        source: Optional[utils.QuerySource] = None,
     ) -> Engine:
         extra = self.get_extra()
         sqlalchemy_url = make_url(self.sqlalchemy_uri_decrypted)
-        sqlalchemy_url = self.db_engine_spec.adjust_database_uri(sqlalchemy_url, schema)
+        self.db_engine_spec.adjust_database_uri(sqlalchemy_url, schema)
         effective_username = self.get_effective_user(sqlalchemy_url, user_name)
         # If using MySQL or Presto for example, will set url.username
         # If using Hive, will not do anything yet since that relies on a
@@ -292,7 +292,7 @@ class Database(
         )
 
         masked_url = self.get_password_masked_url(sqlalchemy_url)
-        logger.info("Database.get_sqla_engine(). Masked URL: %s", str(masked_url))
+        logger.debug("Database.get_sqla_engine(). Masked URL: %s", str(masked_url))
 
         params = extra.get("engine_params", {})
         if nullpool:
@@ -314,6 +314,14 @@ class Database(
         params.update(self.get_encrypted_extra())
 
         if DB_CONNECTION_MUTATOR:
+            if not source and request and request.referrer:
+                if "/superset/dashboard/" in request.referrer:
+                    source = utils.QuerySource.DASHBOARD
+                elif "/superset/explore/" in request.referrer:
+                    source = utils.QuerySource.CHART
+                elif "/superset/sqllab/" in request.referrer:
+                    source = utils.QuerySource.SQL_LAB
+
             sqlalchemy_url, params = DB_CONNECTION_MUTATOR(
                 sqlalchemy_url, params, effective_username, security_manager, source
             )
@@ -330,15 +338,8 @@ class Database(
         self, sql: str, schema: Optional[str] = None, mutator: Optional[Callable] = None
     ) -> pd.DataFrame:
         sqls = [str(s).strip(" ;") for s in sqlparse.parse(sql)]
-        source_key = None
-        if request and request.referrer:
-            if "/superset/dashboard/" in request.referrer:
-                source_key = "dashboard"
-            elif "/superset/explore/" in request.referrer:
-                source_key = "chart"
-        engine = self.get_sqla_engine(
-            schema=schema, source=utils.sources[source_key] if source_key else None
-        )
+
+        engine = self.get_sqla_engine(schema=schema)
         username = utils.get_username()
 
         def needs_conversion(df_series: pd.Series) -> bool:
@@ -398,9 +399,7 @@ class Database(
         cols: Optional[List[Dict[str, Any]]] = None,
     ):
         """Generates a ``select *`` statement in the proper dialect"""
-        eng = self.get_sqla_engine(
-            schema=schema, source=utils.sources.get("sql_lab", None)
-        )
+        eng = self.get_sqla_engine(schema=schema, source=utils.QuerySource.SQL_LAB)
         return self.db_engine_spec.select_star(
             self,
             table_name,
@@ -429,7 +428,7 @@ class Database(
         attribute_in_key="id",
     )
     def get_all_table_names_in_database(
-        self, cache: bool = False, cache_timeout: bool = None, force=False
+        self, cache: bool = False, cache_timeout: Optional[bool] = None, force=False
     ) -> List[utils.DatasourceName]:
         """Parameters need to be passed as keyword arguments."""
         if not self.allow_multi_schema_metadata_fetch:
@@ -441,7 +440,10 @@ class Database(
         attribute_in_key="id",  # type: ignore
     )
     def get_all_view_names_in_database(
-        self, cache: bool = False, cache_timeout: bool = None, force: bool = False
+        self,
+        cache: bool = False,
+        cache_timeout: Optional[bool] = None,
+        force: bool = False,
     ) -> List[utils.DatasourceName]:
         """Parameters need to be passed as keyword arguments."""
         if not self.allow_multi_schema_metadata_fetch:
@@ -514,7 +516,10 @@ class Database(
         key=lambda *args, **kwargs: "db:{}:schema_list", attribute_in_key="id"
     )
     def get_all_schema_names(
-        self, cache: bool = False, cache_timeout: int = None, force: bool = False
+        self,
+        cache: bool = False,
+        cache_timeout: Optional[int] = None,
+        force: bool = False,
     ) -> List[str]:
         """Parameters need to be passed as keyword arguments.
 

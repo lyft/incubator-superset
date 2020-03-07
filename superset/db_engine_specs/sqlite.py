@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 class SqliteEngineSpec(BaseEngineSpec):
     engine = "sqlite"
 
-    _time_grain_functions = {
+    _time_grain_expressions = {
         None: "{col}",
         "PT1S": "DATETIME(STRFTIME('%Y-%m-%dT%H:%M:%S', {col}))",
         "PT1M": "DATETIME(STRFTIME('%Y-%m-%dT%H:%M:00', {col}))",
@@ -49,7 +49,7 @@ class SqliteEngineSpec(BaseEngineSpec):
 
     @classmethod
     def get_all_datasource_names(
-        cls, database, datasource_type: str
+        cls, database: "Database", datasource_type: str
     ) -> List[utils.DatasourceName]:
         schemas = database.get_all_schema_names(
             cache=database.schema_cache_enabled,

@@ -28,7 +28,7 @@ import os
 import sys
 from collections import OrderedDict
 from datetime import date
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
 
 from celery.schedules import crontab
 from dateutil import tz
@@ -41,6 +41,9 @@ from superset.utils.logging_configurator import DefaultLoggingConfigurator
 
 logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from flask_appbuilder.security.sqla import models  # pylint: disable=unused-import
+    from superset.models.core import Database  # pylint: disable=unused-import
 
 # Realtime stats logger, a StatsD implementation exists
 STATS_LOGGER = DummyStatsLogger()
@@ -277,7 +280,9 @@ DEFAULT_FEATURE_FLAGS = {
     # Experimental feature introducing a client (browser) cache
     "CLIENT_CACHE": False,
     "ENABLE_EXPLORE_JSON_CSRF_PROTECTION": False,
+    "KV_STORE": False,
     "PRESTO_EXPAND_DATA": False,
+    "SHARE_QUERIES_VIA_KV_STORE": False,
     "TAGGING_SYSTEM": False,
 }
 
@@ -355,13 +360,14 @@ TIME_GRAIN_BLACKLIST: List[str] = []
 TIME_GRAIN_ADDONS: Dict[str, str] = {}
 
 # Implementation of additional time grains per engine.
+# The column to be truncated is denoted `{col}` in the expression.
 # For example: To implement 2 second time grain on clickhouse engine:
-# TIME_GRAIN_ADDON_FUNCTIONS = {
+# TIME_GRAIN_ADDON_EXPRESSIONS = {
 #     'clickhouse': {
 #         'PT2S': 'toDateTime(intDiv(toUInt32(toDateTime({col})), 2)*2)'
 #     }
 # }
-TIME_GRAIN_ADDON_FUNCTIONS: Dict[str, Dict[str, str]] = {}
+TIME_GRAIN_ADDON_EXPRESSIONS: Dict[str, Dict[str, str]] = {}
 
 # ---------------------------------------------------
 # List of viz_types not allowed in your environment
@@ -521,6 +527,32 @@ SQLLAB_ASYNC_TIME_LIMIT_SEC = 60 * 60 * 6
 # timeout.
 SQLLAB_QUERY_COST_ESTIMATE_TIMEOUT = 10  # seconds
 
+# Flag that controls if limit should be enforced on the CTA (create table as queries).
+SQLLAB_CTAS_NO_LIMIT = False
+
+# This allows you to define custom logic around the "CREATE TABLE AS" or CTAS feature
+# in SQL Lab that defines where the target schema should be for a given user.
+# Database `CTAS Schema` has a precedence over this setting.
+# Example below returns a username and CTA queries will write tables into the schema
+# name `username`
+# SQLLAB_CTAS_SCHEMA_NAME_FUNC = lambda database, user, schema, sql: user.username
+# This is move involved example where depending on the database you can leverage data
+# available to assign schema for the CTA query:
+# def compute_schema_name(database: Database, user: User, schema: str, sql: str) -> str:
+#     if database.name == 'mysql_payments_slave':
+#         return 'tmp_superset_schema'
+#     if database.name == 'presto_gold':
+#         return user.username
+#     if database.name == 'analytics':
+#         if 'analytics' in [r.name for r in user.roles]:
+#             return 'analytics_cta'
+#         else:
+#             return f'tmp_{schema}'
+# Function accepts database object, user object, schema name and sql that will be run.
+SQLLAB_CTAS_SCHEMA_NAME_FUNC: Optional[
+    Callable[["Database", "models.User", str, str], str]
+] = None
+
 # An instantiated derivative of werkzeug.contrib.cache.BaseCache
 # if enabled, it can be used to store the results of long-running queries
 # in SQL Lab by using the "Run Async" button/feature
@@ -584,6 +616,9 @@ ENABLE_CHUNK_ENCODING = False
 SILENCE_FAB = True
 
 FAB_ADD_SECURITY_VIEWS = True
+FAB_ADD_SECURITY_PERMISSION_VIEW = False
+FAB_ADD_SECURITY_VIEW_MENU_VIEW = False
+FAB_ADD_SECURITY_PERMISSION_VIEWS_VIEW = False
 
 # The link to a page containing common errors and their resolutions
 # It will be appended at the bottom of sql_lab errors.
@@ -729,6 +764,15 @@ TALISMAN_CONFIG = {
     "force_https_permanent": False,
 }
 
+# Note that: RowLevelSecurityFilter is only given by default to the Admin role
+# and the Admin Role does have the all_datasources security permission.
+# But, if users create a specific role with access to RowLevelSecurityFilter MVC
+# and a custom datasource access, the table dropdown will not be correctly filtered
+# by that custom datasource access. So we are assuming a default security config,
+# a custom security config could potentially give access to setting filters on
+# tables that users do not have access to.
+ENABLE_ROW_LEVEL_SECURITY = False
+
 #
 # Flask session cookie options
 #
@@ -745,6 +789,10 @@ SEND_FILE_MAX_AGE_DEFAULT = 60 * 60 * 24 * 365  # Cache static resources
 # URI to database storing the example data, points to
 # SQLALCHEMY_DATABASE_URI by default if set to `None`
 SQLALCHEMY_EXAMPLES_URI = None
+
+# Some sqlalchemy connection strings can open Superset to security risks.
+# Typically these should not be allowed.
+PREVENT_UNSAFE_DB_CONNECTIONS = True
 
 # SIP-15 should be enabled for all new Superset deployments which ensures that the time
 # range endpoints adhere to [start, end). For existing deployments admins should provide

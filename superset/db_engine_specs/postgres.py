@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 from datetime import datetime
-from typing import List, Optional, Tuple, TYPE_CHECKING
+from typing import Any, List, Optional, Tuple, TYPE_CHECKING
 
 from pytz import _FixedOffset  # type: ignore
 from sqlalchemy.dialects.postgresql.base import PGInspector
@@ -38,7 +38,7 @@ class PostgresBaseEngineSpec(BaseEngineSpec):
 
     engine = ""
 
-    _time_grain_functions = {
+    _time_grain_expressions = {
         None: "{col}",
         "PT1S": "DATE_TRUNC('second', {col})",
         "PT1M": "DATE_TRUNC('minute', {col})",
@@ -51,7 +51,7 @@ class PostgresBaseEngineSpec(BaseEngineSpec):
     }
 
     @classmethod
-    def fetch_data(cls, cursor, limit: int) -> List[Tuple]:
+    def fetch_data(cls, cursor: Any, limit: int) -> List[Tuple]:
         cursor.tzinfo_factory = FixedOffsetTimezone
         if not cursor.description:
             return []

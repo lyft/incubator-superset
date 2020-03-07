@@ -17,12 +17,16 @@
 import hashlib
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 import pandas as pd
 from sqlalchemy import literal_column
+from sqlalchemy.sql.expression import ColumnClause
 
 from superset.db_engine_specs.base import BaseEngineSpec
+
+if TYPE_CHECKING:
+    from superset.models.core import Database  # pylint: disable=unused-import
 
 
 class BigQueryEngineSpec(BaseEngineSpec):
@@ -45,16 +49,23 @@ class BigQueryEngineSpec(BaseEngineSpec):
     """
     arraysize = 5000
 
-    _time_grain_functions = {
+    _date_trunc_functions = {
+        "DATE": "DATE_TRUNC",
+        "DATETIME": "DATETIME_TRUNC",
+        "TIME": "TIME_TRUNC",
+        "TIMESTAMP": "TIMESTAMP_TRUNC",
+    }
+
+    _time_grain_expressions = {
         None: "{col}",
-        "PT1S": "TIMESTAMP_TRUNC({col}, SECOND)",
-        "PT1M": "TIMESTAMP_TRUNC({col}, MINUTE)",
-        "PT1H": "TIMESTAMP_TRUNC({col}, HOUR)",
-        "P1D": "TIMESTAMP_TRUNC({col}, DAY)",
-        "P1W": "TIMESTAMP_TRUNC({col}, WEEK)",
-        "P1M": "TIMESTAMP_TRUNC({col}, MONTH)",
-        "P0.25Y": "TIMESTAMP_TRUNC({col}, QUARTER)",
-        "P1Y": "TIMESTAMP_TRUNC({col}, YEAR)",
+        "PT1S": "{func}({col}, SECOND)",
+        "PT1M": "{func}({col}, MINUTE)",
+        "PT1H": "{func}({col}, HOUR)",
+        "P1D": "{func}({col}, DAY)",
+        "P1W": "{func}({col}, WEEK)",
+        "P1M": "{func}({col}, MONTH)",
+        "P0.25Y": "{func}({col}, QUARTER)",
+        "P1Y": "{func}({col}, YEAR)",
     }
 
     @classmethod
@@ -64,13 +75,15 @@ class BigQueryEngineSpec(BaseEngineSpec):
             return f"CAST('{dttm.date().isoformat()}' AS DATE)"
         if tt == "DATETIME":
             return f"""CAST('{dttm.isoformat(timespec="microseconds")}' AS DATETIME)"""
+        if tt == "TIME":
+            return f"""CAST('{dttm.strftime("%H:%M:%S.%f")}' AS TIME)"""
         if tt == "TIMESTAMP":
             return f"""CAST('{dttm.isoformat(timespec="microseconds")}' AS TIMESTAMP)"""
         return None
 
     @classmethod
-    def fetch_data(cls, cursor, limit: int) -> List[Tuple]:
-        data = super(BigQueryEngineSpec, cls).fetch_data(cursor, limit)
+    def fetch_data(cls, cursor: Any, limit: int) -> List[Tuple]:
+        data = super().fetch_data(cursor, limit)
         if data and type(data[0]).__name__ == "Row":
             data = [r.values() for r in data]  # type: ignore
         return data
@@ -112,7 +125,7 @@ class BigQueryEngineSpec(BaseEngineSpec):
 
     @classmethod
     def extra_table_metadata(
-        cls, database, table_name: str, schema_name: str
+        cls, database: "Database", table_name: str, schema_name: str
     ) -> Dict[str, Any]:
         indexes = database.get_indexes(table_name, schema_name)
         if not indexes:
@@ -133,7 +146,7 @@ class BigQueryEngineSpec(BaseEngineSpec):
         }
 
     @classmethod
-    def _get_fields(cls, cols):
+    def _get_fields(cls, cols: List[Dict[str, Any]]) -> List[ColumnClause]:
         """
         BigQuery dialect requires us to not use backtick in the fieldname which are
         nested.
@@ -143,8 +156,7 @@ class BigQueryEngineSpec(BaseEngineSpec):
         column names in the result.
         """
         return [
-            literal_column(c.get("name")).label(c.get("name").replace(".", "__"))
-            for c in cols
+            literal_column(c["name"]).label(c["name"].replace(".", "__")) for c in cols
         ]
 
     @classmethod
@@ -156,7 +168,7 @@ class BigQueryEngineSpec(BaseEngineSpec):
         return "TIMESTAMP_MILLIS({col})"
 
     @classmethod
-    def df_to_sql(cls, df: pd.DataFrame, **kwargs):
+    def df_to_sql(cls, df: pd.DataFrame, **kwargs: Any) -> None:
         """
         Upload data from a Pandas DataFrame to BigQuery. Calls
         `DataFrame.to_gbq()` which requires `pandas_gbq` to be installed.

@@ -19,7 +19,7 @@ import logging
 import re
 from contextlib import closing
 from datetime import datetime, timedelta
-from typing import Any, cast, Dict, List, Optional, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Union
 from urllib import parse
 
 import backoff
@@ -27,33 +27,27 @@ import msgpack
 import pandas as pd
 import pyarrow as pa
 import simplejson as json
-from flask import (
-    abort,
-    flash,
-    g,
-    Markup,
-    redirect,
-    render_template,
-    request,
-    Response,
-    url_for,
-)
+from flask import abort, flash, g, Markup, redirect, render_template, request, Response
 from flask_appbuilder import expose
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_appbuilder.security.decorators import has_access, has_access_api
 from flask_appbuilder.security.sqla import models as ab_models
 from flask_babel import gettext as __, lazy_gettext as _
 from sqlalchemy import and_, Integer, or_, select
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.engine.url import make_url
+from sqlalchemy.exc import (
+    ArgumentError,
+    NoSuchModuleError,
+    OperationalError,
+    SQLAlchemyError,
+)
 from sqlalchemy.orm.session import Session
-from werkzeug.routing import BaseConverter
 from werkzeug.urls import Href
 
 import superset.models.core as models
 from superset import (
     app,
     appbuilder,
-    cache,
     conf,
     dataframe,
     db,
@@ -78,21 +72,26 @@ from superset.exceptions import (
     SupersetTimeoutException,
 )
 from superset.jinja_context import get_template_processor
+from superset.models.core import Database
 from superset.models.dashboard import Dashboard
 from superset.models.datasource_access_request import DatasourceAccessRequest
 from superset.models.slice import Slice
 from superset.models.sql_lab import Query, TabState
 from superset.models.user_attributes import UserAttribute
+from superset.security.analytics_db_safety import (
+    check_sqlalchemy_uri,
+    DBSecurityException,
+)
 from superset.sql_parse import ParsedQuery
 from superset.sql_validators import get_validator_by_name
 from superset.utils import core as utils, dashboard_import_export
+from superset.utils.dashboard_filter_scopes_converter import copy_filter_scopes
 from superset.utils.dates import now_as_float
 from superset.utils.decorators import etag_cache, stats_timing
-from superset.views.chart import views as chart_views
+from superset.views.database.filters import DatabaseFilter
 
 from .base import (
     api,
-    BaseFilter,
     BaseSupersetView,
     check_ownership,
     common_bootstrap_payload,
@@ -107,8 +106,6 @@ from .base import (
     json_success,
     SupersetModelView,
 )
-from .dashboard import views as dash_views
-from .database import views as in_views
 from .utils import (
     apply_display_max_row_limit,
     bootstrap_user_data,
@@ -174,7 +171,7 @@ def is_owner(obj, user):
 
 
 def check_datasource_perms(
-    self, datasource_type: str = None, datasource_id: int = None
+    self, datasource_type: Optional[str] = None, datasource_id: Optional[int] = None
 ) -> None:
     """
     Check if user can access a cached response from explore_json.
@@ -256,6 +253,17 @@ def _deserialize_results_payload(
             "sqllab.query.results_backend_json_deserialize", stats_logger
         ):
             return json.loads(payload)  # type: ignore
+
+
+def get_cta_schema_name(
+    database: Database, user: ab_models.User, schema: str, sql: str
+) -> Optional[str]:
+    func: Optional[Callable[[Database, ab_models.User, str, str], str]] = config[
+        "SQLLAB_CTAS_SCHEMA_NAME_FUNC"
+    ]
+    if not func:
+        return None
+    return func(database, user, schema, sql)
 
 
 class AccessRequestsModelView(SupersetModelView, DeleteMixin):
@@ -1076,21 +1084,30 @@ class Superset(BaseSupersetView):
 
     @api
     @has_access_api
-    @expose("/tables/<db_id>/<schema>/<substr>/")
-    @expose("/tables/<db_id>/<schema>/<substr>/<force_refresh>/")
-    def tables(self, db_id, schema, substr, force_refresh="false"):
+    @expose("/tables/<int:db_id>/<schema>/<substr>/")
+    @expose("/tables/<int:db_id>/<schema>/<substr>/<force_refresh>/")
+    def tables(
+        self, db_id: int, schema: str, substr: str, force_refresh: str = "false"
+    ):
         """Endpoint to fetch the list of tables for given database"""
-        db_id = int(db_id)
-        force_refresh = force_refresh.lower() == "true"
-        schema = utils.parse_js_uri_path_item(schema, eval_undefined=True)
-        substr = utils.parse_js_uri_path_item(substr, eval_undefined=True)
-        database = db.session.query(models.Database).filter_by(id=db_id).one()
+        # Guarantees database filtering by security access
+        query = db.session.query(models.Database)
+        query = DatabaseFilter("id", SQLAInterface(models.Database, db.session)).apply(
+            query, None
+        )
+        database = query.filter_by(id=db_id).one_or_none()
+        if not database:
+            return json_error_response("Not found", 404)
 
-        if schema:
+        force_refresh_parsed = force_refresh.lower() == "true"
+        schema_parsed = utils.parse_js_uri_path_item(schema, eval_undefined=True)
+        substr_parsed = utils.parse_js_uri_path_item(substr, eval_undefined=True)
+
+        if schema_parsed:
             tables = (
                 database.get_all_table_names_in_schema(
-                    schema=schema,
-                    force=force_refresh,
+                    schema=schema_parsed,
+                    force=force_refresh_parsed,
                     cache=database.table_cache_enabled,
                     cache_timeout=database.table_cache_timeout,
                 )
@@ -1098,8 +1115,8 @@ class Superset(BaseSupersetView):
             )
             views = (
                 database.get_all_view_names_in_schema(
-                    schema=schema,
-                    force=force_refresh,
+                    schema=schema_parsed,
+                    force=force_refresh_parsed,
                     cache=database.table_cache_enabled,
                     cache_timeout=database.table_cache_timeout,
                 )
@@ -1113,20 +1130,22 @@ class Superset(BaseSupersetView):
                 cache=True, force=False, cache_timeout=24 * 60 * 60
             )
         tables = security_manager.get_datasources_accessible_by_user(
-            database, tables, schema
+            database, tables, schema_parsed
         )
         views = security_manager.get_datasources_accessible_by_user(
-            database, views, schema
+            database, views, schema_parsed
         )
 
         def get_datasource_label(ds_name: utils.DatasourceName) -> str:
-            return ds_name.table if schema else f"{ds_name.schema}.{ds_name.table}"
+            return (
+                ds_name.table if schema_parsed else f"{ds_name.schema}.{ds_name.table}"
+            )
 
-        if substr:
-            tables = [tn for tn in tables if substr in get_datasource_label(tn)]
-            views = [vn for vn in views if substr in get_datasource_label(vn)]
+        if substr_parsed:
+            tables = [tn for tn in tables if substr_parsed in get_datasource_label(tn)]
+            views = [vn for vn in views if substr_parsed in get_datasource_label(vn)]
 
-        if not schema and database.default_schemas:
+        if not schema_parsed and database.default_schemas:
             user_schema = g.user.email.split("@")[0]
             valid_schemas = set(database.default_schemas + [user_schema])
 
@@ -1137,7 +1156,7 @@ class Superset(BaseSupersetView):
         total_items = len(tables) + len(views)
         max_tables = len(tables)
         max_views = len(views)
-        if total_items and substr:
+        if total_items and substr_parsed:
             max_tables = max_items * len(tables) // total_items
             max_views = max_items * len(views) // total_items
 
@@ -1180,34 +1199,33 @@ class Superset(BaseSupersetView):
         dash.owners = [g.user] if g.user else []
         dash.dashboard_title = data["dashboard_title"]
 
+        old_to_new_slice_ids: Dict[int, int] = {}
         if data["duplicate_slices"]:
             # Duplicating slices as well, mapping old ids to new ones
-            old_to_new_sliceids = {}
             for slc in original_dash.slices:
                 new_slice = slc.clone()
                 new_slice.owners = [g.user] if g.user else []
                 session.add(new_slice)
                 session.flush()
                 new_slice.dashboards.append(dash)
-                old_to_new_sliceids["{}".format(slc.id)] = "{}".format(new_slice.id)
+                old_to_new_slice_ids[slc.id] = new_slice.id
 
             # update chartId of layout entities
-            # in v2_dash positions json data, chartId should be integer,
-            # while in older version slice_id is string type
             for value in data["positions"].values():
                 if (
                     isinstance(value, dict)
                     and value.get("meta")
                     and value.get("meta").get("chartId")
                 ):
-                    old_id = "{}".format(value.get("meta").get("chartId"))
-                    new_id = int(old_to_new_sliceids[old_id])
+                    old_id = value.get("meta").get("chartId")
+                    new_id = old_to_new_slice_ids[old_id]
                     value["meta"]["chartId"] = new_id
         else:
             dash.slices = original_dash.slices
+
         dash.params = original_dash.params
 
-        self._set_dash_metadata(dash, data)
+        self._set_dash_metadata(dash, data, old_to_new_slice_ids)
         session.add(dash)
         session.commit()
         dash_json = json.dumps(dash.data)
@@ -1230,7 +1248,10 @@ class Superset(BaseSupersetView):
         return json_success(json.dumps({"status": "SUCCESS"}))
 
     @staticmethod
-    def _set_dash_metadata(dashboard, data):
+    def _set_dash_metadata(
+        dashboard, data, old_to_new_slice_ids: Optional[Dict[int, int]] = None
+    ):
+        old_to_new_slice_ids = old_to_new_slice_ids or {}
         positions = data["positions"]
         # find slices in the position data
         slice_ids = []
@@ -1271,17 +1292,21 @@ class Superset(BaseSupersetView):
 
         if "timed_refresh_immune_slices" not in md:
             md["timed_refresh_immune_slices"] = []
-
+        new_filter_scopes: Dict[str, Dict] = {}
         if "filter_scopes" in data:
-            md.pop("filter_immune_slices", None)
-            md.pop("filter_immune_slice_fields", None)
-            md["filter_scopes"] = json.loads(data.get("filter_scopes", "{}"))
+            # replace filter_id and immune ids from old slice id to new slice id:
+            # and remove slice ids that are not in dash anymore
+            new_filter_scopes = copy_filter_scopes(
+                old_to_new_slc_id_dict={
+                    sid: old_to_new_slice_ids.get(sid, sid) for sid in slice_ids
+                },
+                old_filter_scopes=json.loads(data["filter_scopes"] or "{}"),
+            )
+        if new_filter_scopes:
+            md["filter_scopes"] = new_filter_scopes
         else:
-            if "filter_immune_slices" not in md:
-                md["filter_immune_slices"] = []
-            if "filter_immune_slice_fields" not in md:
-                md["filter_immune_slice_fields"] = {}
-        md["expanded_slices"] = data["expanded_slices"]
+            md.pop("filter_scopes", None)
+        md["expanded_slices"] = data.get("expanded_slices", {})
         md["refresh_frequency"] = data.get("refresh_frequency", 0)
         default_filters_data = json.loads(data.get("default_filters", "{}"))
         applicable_filters = {
@@ -1317,10 +1342,11 @@ class Superset(BaseSupersetView):
     @expose("/testconn", methods=["POST", "GET"])
     def testconn(self):
         """Tests a sqla connection"""
+        db_name = request.json.get("name")
+        uri = request.json.get("uri")
         try:
-            db_name = request.json.get("name")
-            uri = request.json.get("uri")
-
+            if app.config["PREVENT_UNSAFE_DB_CONNECTIONS"]:
+                check_sqlalchemy_uri(uri)
             # if the database already exists in the database, only its safe (password-masked) URI
             # would be shown in the UI and would be passed in the form data.
             # so if the database already exists and the form was submitted with the safe URI,
@@ -1349,11 +1375,35 @@ class Superset(BaseSupersetView):
             with closing(engine.connect()) as conn:
                 conn.scalar(select([1]))
                 return json_success('"OK"')
-        except Exception as e:
-            logger.exception(e)
+        except NoSuchModuleError as e:
+            logger.info("Invalid driver %s", e)
+            driver_name = make_url(uri).drivername
             return json_error_response(
-                "Connection failed!\n\n" f"The error message returned was:\n{e}", 400
+                _(
+                    "Could not load database driver: %(driver_name)s",
+                    driver_name=driver_name,
+                ),
+                400,
             )
+        except ArgumentError as e:
+            logger.info("Invalid URI %s", e)
+            return json_error_response(
+                _(
+                    "Invalid connection string, a valid string usually follows:\n"
+                    "'DRIVER://USER:PASSWORD@DB-HOST/DATABASE-NAME'"
+                )
+            )
+        except OperationalError as e:
+            logger.warning("Connection failed %s", e)
+            return json_error_response(
+                _("Connection failed, please check your connection settings."), 400
+            )
+        except DBSecurityException as e:
+            logger.warning("Stopped an unsafe database connection. %s", e)
+            return json_error_response(_(str(e)), 400)
+        except Exception as e:
+            logger.error("Unexpected error %s", e)
+            return json_error_response(_("Unexpected error occurred."), 400)
 
     @api
     @has_access_api
@@ -1947,18 +1997,43 @@ class Superset(BaseSupersetView):
     @expose("/select_star/<database_id>/<table_name>/<schema>")
     @event_logger.log_this
     def select_star(self, database_id, table_name, schema=None):
-        mydb = db.session.query(models.Database).get(database_id)
+        logging.warning(
+            f"{self.__class__.__name__}.select_star "
+            "This API endpoint is deprecated and will be removed in version 1.0.0"
+        )
+        stats_logger.incr(f"{self.__class__.__name__}.select_star.init")
+        database = db.session.query(models.Database).get(database_id)
+        if not database:
+            stats_logger.incr(
+                f"deprecated.{self.__class__.__name__}.select_star.database_not_found"
+            )
+            return json_error_response("Not found", 404)
         schema = utils.parse_js_uri_path_item(schema, eval_undefined=True)
         table_name = utils.parse_js_uri_path_item(table_name)
+        # Check that the user can access the datasource
+        if not self.appbuilder.sm.can_access_datasource(database, table_name, schema):
+            stats_logger.incr(
+                f"deprecated.{self.__class__.__name__}.select_star.permission_denied"
+            )
+            logging.warning(
+                f"Permission denied for user {g.user} on table: {table_name} "
+                f"schema: {schema}"
+            )
+            return json_error_response("Not found", 404)
+        stats_logger.incr(f"deprecated.{self.__class__.__name__}.select_star.success")
         return json_success(
-            mydb.select_star(table_name, schema, latest_partition=True, show_cols=True)
+            database.select_star(
+                table_name, schema, latest_partition=True, show_cols=True
+            )
         )
 
     @has_access_api
     @expose("/estimate_query_cost/<database_id>/", methods=["POST"])
     @expose("/estimate_query_cost/<database_id>/<schema>/", methods=["POST"])
     @event_logger.log_this
-    def estimate_query_cost(self, database_id: int, schema: str = None) -> Response:
+    def estimate_query_cost(
+        self, database_id: int, schema: Optional[str] = None
+    ) -> Response:
         mydb = db.session.query(models.Database).get(database_id)
 
         sql = json.loads(request.form.get("sql", '""'))
@@ -1972,7 +2047,7 @@ class Superset(BaseSupersetView):
         try:
             with utils.timeout(seconds=timeout, error_message=timeout_msg):
                 cost = mydb.db_engine_spec.estimate_query_cost(
-                    mydb, schema, sql, utils.sources.get("sql_lab")
+                    mydb, schema, sql, utils.QuerySource.SQL_LAB
                 )
         except SupersetTimeoutException as e:
             logger.exception(e)
@@ -2295,9 +2370,14 @@ class Superset(BaseSupersetView):
         if not mydb:
             return json_error_response(f"Database with id {database_id} is missing.")
 
-        # Set tmp_table_name for CTA
+        # Set tmp_schema_name for CTA
+        # TODO(bkyryliuk): consider parsing, splitting tmp_schema_name from tmp_table_name if user enters
+        # <schema_name>.<table_name>
+        tmp_schema_name: Optional[str] = schema
         if select_as_cta and mydb.force_ctas_schema:
-            tmp_table_name = f"{mydb.force_ctas_schema}.{tmp_table_name}"
+            tmp_schema_name = mydb.force_ctas_schema
+        elif select_as_cta:
+            tmp_schema_name = get_cta_schema_name(mydb, g.user, schema, sql)
 
         # Save current query
         query = Query(
@@ -2310,6 +2390,7 @@ class Superset(BaseSupersetView):
             status=status,
             sql_editor_id=sql_editor_id,
             tmp_table_name=tmp_table_name,
+            tmp_schema_name=tmp_schema_name,
             user_id=g.user.get_id() if g.user else None,
             client_id=client_id,
         )
@@ -2350,9 +2431,11 @@ class Superset(BaseSupersetView):
                 f"Query {query_id}: Template rendering failed: {error_msg}"
             )
 
-        # set LIMIT after template processing
-        limits = [mydb.db_engine_spec.get_limit_from_sql(rendered_query), limit]
-        query.limit = min(lim for lim in limits if lim is not None)
+        # Limit is not applied to the CTA queries if SQLLAB_CTAS_NO_LIMIT flag is set to True.
+        if not (config.get("SQLLAB_CTAS_NO_LIMIT") and select_as_cta):
+            # set LIMIT after template processing
+            limits = [mydb.db_engine_spec.get_limit_from_sql(rendered_query), limit]
+            query.limit = min(lim for lim in limits if lim is not None)
 
         # Flag for whether or not to expand data
         # (feature that will expand Presto row objects and arrays)

@@ -17,17 +17,17 @@
  * under the License.
  */
 import React from 'react';
-import { Cell, HeaderGroup, Row } from 'react-table';
+import cx from 'classnames';
+import { TableInstance } from 'react-table';
 
-interface Props<D extends object = {}> {
+interface Props {
   getTableProps: (userProps?: any) => any;
   getTableBodyProps: (userProps?: any) => any;
-  prepareRow: (row: Row<D>) => any;
-  headerGroups: Array<HeaderGroup<D>>;
-  rows: Array<Row<D>>;
+  prepareRow: TableInstance['prepareRow'];
+  headerGroups: TableInstance['headerGroups'];
+  rows: TableInstance['rows'];
   loading: boolean;
 }
-/* tslint:disable:jsx-key */
 export default function TableCollection({
   getTableProps,
   getTableBodyProps,
@@ -35,34 +35,37 @@ export default function TableCollection({
   headerGroups,
   rows,
   loading,
-}: Props<any>) {
+}: Props) {
   return (
-    <table {...getTableProps()} className='table table-hover'>
+    <table {...getTableProps()} className="table table-hover">
       <thead>
-        {headerGroups.map((headerGroup) => (
+        {headerGroups.map(headerGroup => (
           <tr {...headerGroup.getHeaderGroupProps()}>
-            {headerGroup.headers.map((column: any) => (
-              <th {...column.getHeaderProps(column.getSortByToggleProps())} data-test='sort-header'>
-                {column.render('Header')}
-                {'  '}
-                {column.sortable && (
-                  <i
-                    className={`text-primary fa fa-${
-                      column.isSorted
-                        ? column.isSortedDesc
-                          ? 'sort-down'
-                          : 'sort-up'
-                        : 'sort'
-                      }`}
-                  />
-                )}
-              </th>
-            ))}
+            {headerGroup.headers.map(column =>
+              column.hidden ? null : (
+                <th
+                  {...column.getHeaderProps(column.getSortByToggleProps())}
+                  data-test="sort-header"
+                >
+                  {column.render('Header')}
+                  {'  '}
+                  {column.sortable && (
+                    <i
+                      className={cx('text-primary fa', {
+                        'fa-sort': !column.isSorted,
+                        'fa-sort-down': column.isSorted && column.isSortedDesc,
+                        'fa-sort-up': column.isSorted && !column.isSortedDesc,
+                      })}
+                    />
+                  )}
+                </th>
+              ),
+            )}
           </tr>
         ))}
       </thead>
       <tbody {...getTableBodyProps()}>
-        {rows.map((row) => {
+        {rows.map(row => {
           prepareRow(row);
           const loadingProps = loading ? { className: 'table-row-loader' } : {};
           return (
@@ -70,9 +73,13 @@ export default function TableCollection({
               {...row.getRowProps()}
               {...loadingProps}
               onMouseEnter={() => row.setState && row.setState({ hover: true })}
-              onMouseLeave={() => row.setState && row.setState({ hover: false })}
+              onMouseLeave={() =>
+                row.setState && row.setState({ hover: false })
+              }
             >
-              {row.cells.map((cell: Cell<any>) => {
+              {row.cells.map(cell => {
+                if (cell.column.hidden) return null;
+
                 const columnCellProps = cell.column.cellProps || {};
 
                 return (

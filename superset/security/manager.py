@@ -81,7 +81,11 @@ PermissionViewModelView.list_widget = SupersetSecurityListWidget
 PermissionModelView.list_widget = SupersetSecurityListWidget
 
 # Limiting routes on FAB model views
-UserModelView.include_route_methods = RouteMethod.CRUD_SET | {"userinfo"}
+UserModelView.include_route_methods = RouteMethod.CRUD_SET | {
+    RouteMethod.ACTION,
+    RouteMethod.ACTION_POST,
+    "userinfo",
+}
 RoleModelView.include_route_methods = RouteMethod.CRUD_SET
 PermissionViewModelView.include_route_methods = {RouteMethod.LIST}
 PermissionModelView.include_route_methods = {RouteMethod.LIST}
@@ -120,6 +124,7 @@ class SupersetSecurityManager(SecurityManager):
         "RoleModelView",
         "LogModelView",
         "Security",
+        "RowLevelSecurityFiltersModelView",
     } | USER_MODEL_VIEWS
 
     ALPHA_ONLY_VIEW_MENUS = {"Upload a CSV"}
@@ -310,8 +315,13 @@ class SupersetSecurityManager(SecurityManager):
 
         return conf.get("PERMISSION_INSTRUCTIONS_LINK")
 
+    def can_access_datasource(
+        self, database: "Database", table_name: str, schema: Optional[str] = None
+    ) -> bool:
+        return self._datasource_access_by_name(database, table_name, schema=schema)
+
     def _datasource_access_by_name(
-        self, database: "Database", table_name: str, schema: str = None
+        self, database: "Database", table_name: str, schema: Optional[str] = None
     ) -> bool:
         """
         Return True if the user can access the SQL table, False otherwise.
@@ -520,7 +530,7 @@ class SupersetSecurityManager(SecurityManager):
             return [d for d in datasource_names if d in names]
         else:
             full_names = {d.full_name for d in user_datasources}
-            return [d for d in datasource_names if d in full_names]
+            return [d for d in datasource_names if f"[{database}].[{d}]" in full_names]
 
     def merge_perm(self, permission_name: str, view_menu_name: str) -> None:
         """
@@ -886,3 +896,48 @@ class SupersetSecurityManager(SecurityManager):
         """
 
         self.assert_datasource_permission(viz.datasource)
+
+    def get_rls_filters(self, table: "BaseDatasource"):
+        """
+        Retrieves the appropriate row level security filters for the current user and the passed table.
+
+        :param table: The table to check against
+        :returns: A list of filters.
+        """
+        if hasattr(g, "user") and hasattr(g.user, "id"):
+            from superset import db
+            from superset.connectors.sqla.models import (
+                RLSFilterRoles,
+                RowLevelSecurityFilter,
+            )
+
+            user_roles = (
+                db.session.query(assoc_user_role.c.role_id)
+                .filter(assoc_user_role.c.user_id == g.user.id)
+                .subquery()
+            )
+            filter_roles = (
+                db.session.query(RLSFilterRoles.c.id)
+                .filter(RLSFilterRoles.c.role_id.in_(user_roles))
+                .subquery()
+            )
+            query = (
+                db.session.query(
+                    RowLevelSecurityFilter.id, RowLevelSecurityFilter.clause
+                )
+                .filter(RowLevelSecurityFilter.table_id == table.id)
+                .filter(RowLevelSecurityFilter.id.in_(filter_roles))
+            )
+            return query.all()
+        return []
+
+    def get_rls_ids(self, table: "BaseDatasource") -> List[int]:
+        """
+        Retrieves the appropriate row level security filters IDs for the current user and the passed table.
+
+        :param table: The table to check against
+        :returns: A list of IDs.
+        """
+        ids = [f.id for f in self.get_rls_filters(table)]
+        ids.sort()  # Combinations rather than permutations
+        return ids

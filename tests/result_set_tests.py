@@ -17,9 +17,6 @@
 # isort:skip_file
 from datetime import datetime
 
-import numpy as np
-import pandas as pd
-
 import tests.test_app
 from superset.dataframe import df_to_records
 from superset.db_engine_specs import BaseEngineSpec
@@ -88,12 +85,16 @@ class SupersetResultSetTestCase(SupersetTestCase):
         )
 
     def test_is_date(self):
-        is_date = SupersetResultSet.is_date
-        self.assertEqual(is_date("DATETIME"), True)
-        self.assertEqual(is_date("TIMESTAMP"), True)
-        self.assertEqual(is_date("STRING"), False)
-        self.assertEqual(is_date(""), False)
-        self.assertEqual(is_date(None), False)
+        data = [("a", 1), ("a", 2)]
+        cursor_descr = (("a", "string"), ("a", "string"))
+        results = SupersetResultSet(data, cursor_descr, BaseEngineSpec)
+        self.assertEqual(results.is_temporal("DATE"), True)
+        self.assertEqual(results.is_temporal("DATETIME"), True)
+        self.assertEqual(results.is_temporal("TIME"), True)
+        self.assertEqual(results.is_temporal("TIMESTAMP"), True)
+        self.assertEqual(results.is_temporal("STRING"), False)
+        self.assertEqual(results.is_temporal(""), False)
+        self.assertEqual(results.is_temporal(None), False)
 
     def test_dedup_with_data(self):
         data = [("a", 1), ("a", 2)]
@@ -198,6 +199,16 @@ class SupersetResultSetTestCase(SupersetTestCase):
                     "metadata": '["test", [["foo", 123456, [[["test"], 3432546, 7657658766], [["fake"], 656756765, 324324324324]]]], ["test2", 43, 765765765], null, null]'
                 }
             ],
+        )
+
+    def test_nested_list_types(self):
+        data = [([{"TestKey": [123456, "foo"]}],)]
+        cursor_descr = [("metadata",)]
+        results = SupersetResultSet(data, cursor_descr, BaseEngineSpec)
+        self.assertEqual(results.columns[0]["type"], "STRING")
+        df = results.to_pandas_df()
+        self.assertEqual(
+            df_to_records(df), [{"metadata": '[{"TestKey": [123456, "foo"]}]'}]
         )
 
     def test_empty_datetime(self):

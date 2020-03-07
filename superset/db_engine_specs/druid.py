@@ -14,7 +14,14 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+from typing import TYPE_CHECKING
+
 from superset.db_engine_specs.base import BaseEngineSpec
+
+if TYPE_CHECKING:
+    from superset.connectors.sqla.models import (  # pylint: disable=unused-import
+        TableColumn,
+    )
 
 
 class DruidEngineSpec(BaseEngineSpec):  # pylint: disable=abstract-method
@@ -24,7 +31,7 @@ class DruidEngineSpec(BaseEngineSpec):  # pylint: disable=abstract-method
     allows_joins = False
     allows_subqueries = True
 
-    _time_grain_functions = {
+    _time_grain_expressions = {
         None: "{col}",
         "PT1S": "FLOOR({col} TO SECOND)",
         "PT1M": "FLOOR({col} TO MINUTE)",
@@ -37,6 +44,6 @@ class DruidEngineSpec(BaseEngineSpec):  # pylint: disable=abstract-method
     }
 
     @classmethod
-    def alter_new_orm_column(cls, orm_col):
+    def alter_new_orm_column(cls, orm_col: "TableColumn") -> None:
         if orm_col.column_name == "__time":
             orm_col.is_dttm = True

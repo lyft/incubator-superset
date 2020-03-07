@@ -22,6 +22,7 @@ import functools
 import json
 import logging
 import os
+import re
 import signal
 import smtplib
 import traceback
@@ -71,8 +72,6 @@ DTTM_ALIAS = "__timestamp"
 ADHOC_METRIC_EXPRESSION_TYPES = {"SIMPLE": "SIMPLE", "SQL": "SQL"}
 
 JS_MAX_INTEGER = 9007199254740991  # Largest int Java Script can handle 2^53-1
-
-sources = {"chart": 0, "dashboard": 1, "sql_lab": 2}
 
 try:
     # Having might not have been imported.
@@ -414,7 +413,7 @@ def json_dumps_w_dates(payload):
     return json.dumps(payload, default=json_int_dttm_ser)
 
 
-def error_msg_from_exception(e):
+def error_msg_from_exception(e: Exception) -> str:
     """Translate exception into error message
 
     Database have different ways to handle exception. This function attempts
@@ -430,10 +429,10 @@ def error_msg_from_exception(e):
     """
     msg = ""
     if hasattr(e, "message"):
-        if isinstance(e.message, dict):
-            msg = e.message.get("message")
-        elif e.message:
-            msg = e.message
+        if isinstance(e.message, dict):  # type: ignore
+            msg = e.message.get("message")  # type: ignore
+        elif e.message:  # type: ignore
+            msg = e.message  # type: ignore
     return msg or str(e)
 
 
@@ -924,6 +923,7 @@ def get_or_create_db(database_name, sqlalchemy_uri, *args, **kwargs):
     database = (
         db.session.query(models.Database).filter_by(database_name=database_name).first()
     )
+
     if not database:
         logger.info(f"Creating database reference for {database_name}")
         database = models.Database(database_name=database_name, *args, **kwargs)
@@ -1227,7 +1227,7 @@ class TimeRangeEndpoint(str, Enum):
     UNKNOWN = "unknown"
 
 
-class ReservedUrlParameters(Enum):
+class ReservedUrlParameters(str, Enum):
     """
     Reserved URL parameters that are used internally by Superset. These will not be
     passed to chart queries, as they control the behavior of the UI.
@@ -1235,3 +1235,23 @@ class ReservedUrlParameters(Enum):
 
     STANDALONE = "standalone"
     EDIT_MODE = "edit"
+
+
+class QuerySource(Enum):
+    """
+    The source of a SQL query.
+    """
+
+    CHART = 0
+    DASHBOARD = 1
+    SQL_LAB = 2
+
+
+class DbColumnType(Enum):
+    """
+    Generic database column type
+    """
+
+    NUMERIC = 0
+    STRING = 1
+    TEMPORAL = 2
