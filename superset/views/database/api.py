@@ -119,14 +119,6 @@ class DatabaseRestApi(DatabaseMixin, BaseSupersetModelRestApi):
         "table_metadata": "list",
         "select_star": "list",
     }
-
-
-class DatabaseRestApi(DatabaseMixin, BaseSupersetModelRestApi):
-    datamodel = SQLAInterface(Database)
-
-    include_route_methods = {"get_list", "table_metadata"}
-    class_permission_name = "DatabaseView"
-    method_permission_name = {"get_list": "list", "table_metadata": "list"}
     resource_name = "database"
     allow_browser_login = True
     base_filters = [["id", DatabaseFilter, lambda: []]]
