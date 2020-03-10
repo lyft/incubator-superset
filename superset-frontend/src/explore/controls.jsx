@@ -494,6 +494,14 @@ export const controls = {
     ),
   },
 
+  readonly: {
+    type: 'CheckboxControl',
+    label: t('Read Only Mode'),
+    default: false,
+    renderTrigger: true,
+    description: t('Whether to show/hide the left panel'),
+  },
+
   show_perc: {
     type: 'CheckboxControl',
     label: t('Show percentage'),
@@ -1452,6 +1460,14 @@ export const controls = {
           ? state.controls.markup_type.value
           : 'markdown',
     }),
+    default: '',
+  },
+
+  config: {
+    type: 'TextAreaControl',
+    renderTrigger: true,
+    language: 'json',
+    label: t('Config'),
     default: '',
   },
 

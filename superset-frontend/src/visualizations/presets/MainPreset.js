@@ -63,6 +63,7 @@ import {
 } from '@superset-ui/legacy-preset-chart-nvd3/lib';
 import { BoxPlotChartPlugin } from '@superset-ui/preset-chart-xy/esm/legacy';
 import { DeckGLChartPreset } from '@superset-ui/legacy-preset-chart-deckgl';
+import { KeplerChartPreset } from '@superset-ui/legacy-preset-chart-kepler';
 
 import FilterBoxChartPlugin from '../FilterBox/FilterBoxChartPlugin';
 import TimeTableChartPlugin from '../TimeTable/TimeTableChartPlugin';
@@ -71,7 +72,7 @@ export default class MainPreset extends Preset {
   constructor() {
     super({
       name: 'Legacy charts',
-      presets: [new DeckGLChartPreset()],
+      presets: [new DeckGLChartPreset(), new KeplerChartPreset()],
       plugins: [
         new AreaChartPlugin().configure({ key: 'area' }),
         new BarChartPlugin().configure({ key: 'bar' }),

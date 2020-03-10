@@ -77,14 +77,11 @@ const plugins = [
     checkSyntacticErrors: true,
   }),
 
-  new CopyPlugin(
-    [
-      'package.json',
-      { from: 'images', to: 'images' },
-      { from: 'stylesheets', to: 'stylesheets' },
-    ],
-    { copyUnmodified: true },
-  ),
+  new CopyPlugin([
+    'package.json',
+    { from: 'images', to: 'images' },
+    { from: 'stylesheets', to: 'stylesheets' },
+  ]),
 ];
 
 if (isDevMode) {
@@ -199,6 +196,7 @@ const config = {
         // for debugging @superset-ui packages via npm link
         test: /\.jsx?$/,
         include: /node_modules\/[@]superset[-]ui.+\/src/,
+        exclude: /type[-]analyzer/, // Tell Babel not to parse files in this package bc it contains CommonJs files
         use: [
           {
             loader: 'babel-loader',

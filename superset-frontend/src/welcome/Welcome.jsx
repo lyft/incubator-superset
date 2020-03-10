@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Panel, Row, Col, Tabs, Tab, FormControl } from 'react-bootstrap';
 import { t } from '@superset-ui/translation';
@@ -24,6 +24,10 @@ import { useQueryParam, StringParam } from 'use-query-params';
 import RecentActivity from '../profile/components/RecentActivity';
 import Favorites from '../profile/components/Favorites';
 import DashboardTable from './DashboardTable';
+import SelectControl from '../explore/components/controls/SelectControl';
+import TagsTable from './TagsTable';
+import { fetchSuggestions } from '../tags';
+import { STANDARD_TAGS } from '../dashboard/util/constants';
 
 const propTypes = {
   user: PropTypes.object.isRequired,
@@ -41,11 +45,26 @@ function useSyncQueryState(queryParam, queryParamType, defaultState) {
   return [state, setQueryStateAndState];
 }
 
+function useFetchSuggestions() {
+  const [tagSuggestions, updateTagSuggestions] = useState(STANDARD_TAGS);
+
+  useEffect(() => {
+    fetchSuggestions({ includeTypes: false }, suggestions => {
+      updateTagSuggestions([
+        ...STANDARD_TAGS,
+        ...suggestions.map(tag => tag.name),
+      ]);
+    });
+  }, []);
+
+  return tagSuggestions;
+}
+
 export default function Welcome({ user }) {
   const [activeTab, setActiveTab] = useSyncQueryState(
     'activeTab',
     StringParam,
-    'all',
+    'tags',
   );
 
   const [searchQuery, setSearchQuery] = useSyncQueryState(
@@ -54,6 +73,9 @@ export default function Welcome({ user }) {
     '',
   );
 
+  const tagSearch = (searchQuery || 'owner:{{ current_user_id() }}').split(',');
+  const tagSuggestions = useFetchSuggestions();
+
   return (
     <div className="container welcome">
       <Tabs
@@ -61,6 +83,26 @@ export default function Welcome({ user }) {
         onSelect={setActiveTab}
         id="uncontrolled-tab-example"
       >
+        <Tab eventKey="tags" title={t('Tags')}>
+          <Panel>
+            <Row>
+              <Col md={8}>
+                <h2>{t('Tags')}</h2>
+              </Col>
+              <Col md={12}>
+                <SelectControl
+                  name="tags"
+                  value={tagSearch}
+                  multi
+                  onChange={tags => setSearchQuery(tags.join(','))}
+                  choices={tagSuggestions}
+                />
+              </Col>
+            </Row>
+            <hr />
+            <TagsTable search={tagSearch} />
+          </Panel>
+        </Tab>
         <Tab eventKey="all" title={t('Dashboards')}>
           <Panel>
             <Row>
