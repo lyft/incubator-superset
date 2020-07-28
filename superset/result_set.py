@@ -68,6 +68,10 @@ def stringify_values(array: np.ndarray) -> np.ndarray:
     return vstringify(array)
 
 
+def destringify(obj: str) -> Any:
+    return json.loads(obj)
+
+
 class SupersetResultSet:
     def __init__(
         self,
