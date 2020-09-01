@@ -2114,7 +2114,10 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
 
             # Explicitly forget the task to ensure the task metadata is removed from the
             # Celery results backend in a timely manner.
-            task.forget()
+            try:
+                task.forget()
+            except NotImplementedError:
+                logger.debug('Celery backend does not implement forget.')
         except Exception as ex:  # pylint: disable=broad-except
             logger.exception("Query %i: %s", query.id, str(ex))
             msg = _(
