@@ -272,27 +272,7 @@ class DashboardRestApi(BaseSupersetModelRestApi):
             500:
               $ref: '#/components/responses/500'
         """
-        if not request.is_json:
-            return self.response_400(message="Request is not JSON")
-        try:
-            item = self.edit_model_schema.load(request.json)
-        # This validates custom Schema with custom validations
-        except ValidationError as error:
-            return self.response_400(message=error.messages)
-        try:
-            changed_model = UpdateDashboardCommand(g.user, pk, item).run()
-            return self.response(200, id=changed_model.id, result=item)
-        except DashboardNotFoundError:
-            return self.response_404()
-        except DashboardForbiddenError:
-            return self.response_403()
-        except DashboardInvalidError as ex:
-            return self.response_422(message=ex.normalized_messages())
-        except DashboardUpdateFailedError as ex:
-            logger.error(
-                "Error updating model %s: %s", self.__class__.__name__, str(ex)
-            )
-            return self.response_422(message=str(ex))
+	return self.response_400(message="Superset will be deprecated on July 1st, 2021. Please use Mode to create dashboard")
 
     @expose("/<pk>", methods=["DELETE"])
     @protect()
