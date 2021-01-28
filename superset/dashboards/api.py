@@ -205,10 +205,26 @@ class DashboardRestApi(BaseSupersetModelRestApi):
             500:
               $ref: '#/components/responses/500'
         """
+        if not request.is_json:
+            return self.response_400(message="Request is not JSON")
+
         logger.info('Received POST to create new dashboard: request.json: {} , request: {}'.format(request.json,
                                                                                                    request))
-        return self.response_400(
-            message="Superset will be deprecated on July 1st, 2021. Please use Mode to create dashboard")
+        try:
+            item = self.add_model_schema.load(request.json)
+        # This validates custom Schema with custom validations
+        except ValidationError as error:
+            return self.response_400(message=error.messages)
+        try:
+            new_model = CreateDashboardCommand(g.user, item).run()
+            return self.response(201, id=new_model.id, result=item)
+        except DashboardInvalidError as ex:
+            return self.response_422(message=ex.normalized_messages())
+        except DashboardCreateFailedError as ex:
+            logger.error(
+                "Error creating model %s: %s", self.__class__.__name__, str(ex)
+            )
+            return self.response_422(message=str(ex))
 
     @expose("/<pk>", methods=["PUT"])
     @protect()
