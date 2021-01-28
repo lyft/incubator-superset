@@ -590,6 +590,12 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
         user_id = g.user.get_id() if g.user else None
         form_data, slc = get_form_data(use_slice_data=True)
 
+        is_new_dashboard_req = request.args.get("add_to_dash") == 'new'
+        if is_new_dashboard_req:
+            return json_error_response('Superset will be deprecated on July 1st, 2021. Please use Mode to create '
+                                       'dashboard',
+                                       status=400,)
+
         # Flash the SIP-15 message if the slice is owned by the current user and has not
         # been updated, i.e., is not using the [start, end) interval.
         if (
@@ -672,6 +678,7 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
 
         # handle save or overwrite
         action = request.args.get("action")
+
 
         if action == "overwrite" and not slice_overwrite_perm:
             return json_error_response(
@@ -1052,15 +1059,8 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
         self, dashboard_id: int
     ) -> FlaskResponse:
         """Save a dashboard's metadata"""
-        session = db.session()
-        dash = session.query(Dashboard).get(dashboard_id)
-        check_ownership(dash, raise_if_false=True)
-        data = json.loads(request.form["data"])
-        DashboardDAO.set_dash_metadata(dash, data)
-        session.merge(dash)
-        session.commit()
-        session.close()
-        return json_success(json.dumps({"status": "SUCCESS"}))
+        return json_error_response('Superset will be deprecated on July 1st, 2021. Please use Mode to create dashboard',
+                                   400)
 
     @api
     @has_access_api
