@@ -238,21 +238,6 @@ class SaveModal extends React.Component {
             placeholder="Select Dashboard"
           />
 
-          <Radio
-            inline
-            checked={this.state.addToDash === 'new'}
-            onChange={this.changeDash.bind(this, 'new')}
-            disabled={canNotSaveToDash}
-            data-test="add-to-new-dashboard"
-          >
-            {t('Add to new dashboard')} &nbsp;
-          </Radio>
-          <input
-            onChange={this.onChange.bind(this, 'newDashboardName')}
-            disabled={canNotSaveToDash}
-            onFocus={this.changeDash.bind(this, 'new')}
-            placeholder={t('[dashboard name]')}
-          />
         </Modal.Body>
 
         <Modal.Footer>
