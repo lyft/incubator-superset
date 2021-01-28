@@ -207,9 +207,6 @@ class DashboardRestApi(BaseSupersetModelRestApi):
         """
         if not request.is_json:
             return self.response_400(message="Request is not JSON")
-
-        logger.info('Received POST to create new dashboard: request.json: {} , request: {}'.format(request.json,
-                                                                                                   request))
         try:
             item = self.add_model_schema.load(request.json)
         # This validates custom Schema with custom validations
